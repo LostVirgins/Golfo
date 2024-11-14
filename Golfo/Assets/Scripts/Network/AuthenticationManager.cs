@@ -4,14 +4,6 @@ using UnityEngine;
 
 namespace lv.network
 {
-    public enum AuthenticationStatus : byte
-    {
-        Success,
-        Failure,
-        InvalidSession,
-        SessionExpired
-    }
-
     public class AuthenticationManager : MonoBehaviour
     {
         public static AuthenticationManager Instance { get; private set; }
@@ -34,7 +26,7 @@ namespace lv.network
         }
 
         // Authenticates the client and returns the result as an AuthenticationStatus
-        public AuthenticationStatus AuthenticateClient(string username, IPEndPoint clientEndPoint, ref string sessionToken)
+        public PacketType AuthenticateClient(string username, IPEndPoint clientEndPoint, ref string sessionToken)
         {
             if (IsValidUser(username))
             {
@@ -42,35 +34,35 @@ namespace lv.network
                 m_authenticatedSessions[clientEndPoint] = sessionToken;
 
                 Packet responsePacket = new Packet();
-                responsePacket.WriteInt((int)AuthenticationStatus.Success);
+                responsePacket.WriteInt((int)PacketType.auth_success);
                 responsePacket.WriteString(sessionToken);
                 NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
 
-                return AuthenticationStatus.Success;
+                return PacketType.auth_success;
             }
             else
             {
                 Packet responsePacket = new Packet();
-                responsePacket.WriteInt((int)AuthenticationStatus.Failure);
+                responsePacket.WriteInt((int)PacketType.auth_failure);
                 NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
 
-                return AuthenticationStatus.Failure;
+                return PacketType.auth_failure;
             }
         }
 
         // Checks if the provided session token is valid for the client
-        public AuthenticationStatus IsAuthenticated(IPEndPoint clientEndPoint, string sessionToken)
+        public PacketType IsAuthenticated(IPEndPoint clientEndPoint, string sessionToken)
         {
             if (m_authenticatedSessions.TryGetValue(clientEndPoint, out string validToken))
             {
                 if (validToken == sessionToken)
-                    return AuthenticationStatus.Success;
+                    return PacketType.auth_success;
                 else
-                    return AuthenticationStatus.InvalidSession;
+                    return PacketType.invalid_session;
             }
             else
             {
-                return AuthenticationStatus.SessionExpired;
+                return PacketType.expired_session;
             }
         }
 

@@ -8,6 +8,12 @@ namespace lv.network
     public enum PacketType : byte
     {
         connection_request,
+
+        auth_success,
+        auth_failure,
+        invalid_session,
+        expired_session,
+
         player_movement,
         player_turn
     }
