@@ -1,40 +1,43 @@
 using System.IO;
 using System.Text;
 
-public class Packet
+namespace lv.network
 {
-    private MemoryStream memoryStream;
-    private BinaryWriter writer;
-    private BinaryReader reader;
-
-    public Packet()
+    public class Packet
     {
-        memoryStream = new MemoryStream();
-        writer = new BinaryWriter(memoryStream);
-    }
+        private MemoryStream m_memoryStream;
+        private BinaryWriter m_writer;
+        private BinaryReader m_reader;
 
-    public Packet(byte[] data)
-    {
-        memoryStream = new MemoryStream(data);
-        reader = new BinaryReader(memoryStream);
-    }
+        public Packet()
+        {
+            m_memoryStream = new MemoryStream();
+            m_writer = new BinaryWriter(m_memoryStream);
+        }
 
-    public void WriteInt(int value) => writer.Write(value);
-    public void WriteString(string value) => writer.Write(Encoding.UTF8.GetBytes(value));
+        public Packet(byte[] data)
+        {
+            m_memoryStream = new MemoryStream(data);
+            m_reader = new BinaryReader(m_memoryStream);
+        }
 
-    public int ReadInt() => reader.ReadInt32();
-    public string ReadString() => Encoding.UTF8.GetString(reader.ReadBytes(reader.ReadInt32()));
+        public void WriteInt(int value) => m_writer.Write(value);
+        public void WriteString(string value) => m_writer.Write(Encoding.UTF8.GetBytes(value));
 
-    public byte[] GetData()
-    {
-        writer.Flush();
-        return memoryStream.ToArray();
-    }
+        public int ReadInt() => m_reader.ReadInt32();
+        public string ReadString() => Encoding.UTF8.GetString(m_reader.ReadBytes(m_reader.ReadInt32()));
 
-    public void Close()
-    {
-        writer?.Close();
-        reader?.Close();
-        memoryStream?.Close();
+        public byte[] GetData()
+        {
+            m_writer.Flush();
+            return m_memoryStream.ToArray();
+        }
+
+        public void Close()
+        {
+            m_writer?.Close();
+            m_reader?.Close();
+            m_memoryStream?.Close();
+        }
     }
 }

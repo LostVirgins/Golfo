@@ -1,32 +1,33 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class Player
+namespace lv.network
 {
-    public string sessionToken { get; private set; }
-    public Vector3 position { get; set; }
-    public Player()
+    public class Player
     {
-        sessionToken = "";
-        position = Vector3.zero;
-    }
+        public string m_sessionToken { get; private set; }
+        public Vector3 m_position { get; set; }
 
-    public Player(string sessionToken)
-    {
-        this.sessionToken = sessionToken;
-        position = Vector3.zero;
-    }
+        public Player()
+        {
+            m_sessionToken = "";
+            m_position = Vector3.zero;
+        }
 
-    public Player(string sessionToken, Vector3 position)
-    {
-        this.sessionToken = sessionToken;
-        this.position = position;
-    }
+        public Player(string sessionToken)
+        {
+            m_sessionToken = sessionToken;
+            m_position = Vector3.zero;
+        }
 
-    public void UpdatePosition(Vector3 newPosition)
-    {
-        position = newPosition;
+        public Player(string sessionToken, Vector3 position)
+        {
+            m_sessionToken = sessionToken;
+            m_position = position;
+        }
+
+        public void UpdatePosition(Vector3 newPosition)
+        {
+            m_position = newPosition;
+        }
     }
 }

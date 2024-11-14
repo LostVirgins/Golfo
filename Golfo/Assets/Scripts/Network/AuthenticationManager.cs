@@ -2,98 +2,103 @@ using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
 
-public enum AuthenticationStatus
+namespace lv.network
 {
-    Success,
-    Failure,
-    InvalidSession,
-    SessionExpired
-}
-
-public class AuthenticationManager : MonoBehaviour
-{
-    private Dictionary<IPEndPoint, string> authenticatedSessions = new Dictionary<IPEndPoint, string>();
-    private HashSet<string> validUsers = new HashSet<string> { "player1", "player2" };
-
-    public static AuthenticationManager Instance { get; private set; }
-
-    private void Awake()
+    public enum AuthenticationStatus
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        Success,
+        Failure,
+        InvalidSession,
+        SessionExpired
     }
 
-    // Authenticates the client and returns the result as an AuthenticationStatus
-    public AuthenticationStatus AuthenticateClient(Packet packet, IPEndPoint clientEndPoint)
+    public class AuthenticationManager : MonoBehaviour
     {
-        string username = packet.ReadString();
+        public static AuthenticationManager Instance { get; private set; }
 
-        if (IsValidUser(username))
+        private Dictionary<IPEndPoint, string> m_authenticatedSessions = new Dictionary<IPEndPoint, string>();
+        private HashSet<string> m_validUsers = new HashSet<string> { "hekbas", "kikofp02", "IITROSDASEII" };
+
+
+        private void Awake()
         {
-            string sessionToken = GenerateSessionToken(username);
-            authenticatedSessions[clientEndPoint] = sessionToken;
-
-            // Send a success packet back with the session token
-            Packet responsePacket = new Packet();
-            responsePacket.WriteInt((int)AuthenticationStatus.Success);
-            responsePacket.WriteString(sessionToken);
-            NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
-
-            return AuthenticationStatus.Success;
-        }
-        else
-        {
-            // Send a failure packet back to the client
-            Packet responsePacket = new Packet();
-            responsePacket.WriteInt((int)AuthenticationStatus.Failure);
-            NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
-
-            return AuthenticationStatus.Failure;
-        }
-    }
-
-    // Checks if the provided session token is valid for the client
-    public AuthenticationStatus IsAuthenticated(IPEndPoint clientEndPoint, string sessionToken)
-    {
-        if (authenticatedSessions.TryGetValue(clientEndPoint, out string validToken))
-        {
-            if (validToken == sessionToken)
+            if (Instance == null)
             {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        // Authenticates the client and returns the result as an AuthenticationStatus
+        public AuthenticationStatus AuthenticateClient(Packet packet, IPEndPoint clientEndPoint)
+        {
+            string username = packet.ReadString();
+
+            if (IsValidUser(username))
+            {
+                string sessionToken = GenerateSessionToken(username);
+                m_authenticatedSessions[clientEndPoint] = sessionToken;
+
+                // Send a success packet back with the session token
+                Packet responsePacket = new Packet();
+                responsePacket.WriteInt((int)AuthenticationStatus.Success);
+                responsePacket.WriteString(sessionToken);
+                NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
+
                 return AuthenticationStatus.Success;
             }
             else
             {
-                return AuthenticationStatus.InvalidSession;
+                // Send a failure packet back to the client
+                Packet responsePacket = new Packet();
+                responsePacket.WriteInt((int)AuthenticationStatus.Failure);
+                NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
+
+                return AuthenticationStatus.Failure;
             }
         }
-        else
+
+        // Checks if the provided session token is valid for the client
+        public AuthenticationStatus IsAuthenticated(IPEndPoint clientEndPoint, string sessionToken)
         {
-            return AuthenticationStatus.SessionExpired;
+            if (m_authenticatedSessions.TryGetValue(clientEndPoint, out string validToken))
+            {
+                if (validToken == sessionToken)
+                {
+                    return AuthenticationStatus.Success;
+                }
+                else
+                {
+                    return AuthenticationStatus.InvalidSession;
+                }
+            }
+            else
+            {
+                return AuthenticationStatus.SessionExpired;
+            }
+        }
+
+        private string GenerateSessionToken(string username)
+        {
+            return $"{username}_{System.Guid.NewGuid()}";
+        }
+
+        private bool IsValidUser(string username)
+        {
+            return m_validUsers.Contains(username);
+        }
+
+        public void RemoveSession(IPEndPoint clientEndPoint)
+        {
+            if (m_authenticatedSessions.ContainsKey(clientEndPoint))
+            {
+                m_authenticatedSessions.Remove(clientEndPoint);
+            }
         }
     }
 
-    private string GenerateSessionToken(string username)
-    {
-        return $"{username}_{System.Guid.NewGuid()}";
-    }
-
-    private bool IsValidUser(string username)
-    {
-        return validUsers.Contains(username);
-    }
-
-    public void RemoveSession(IPEndPoint clientEndPoint)
-    {
-        if (authenticatedSessions.ContainsKey(clientEndPoint))
-        {
-            authenticatedSessions.Remove(clientEndPoint);
-        }
-    }
 }
