@@ -1,20 +1,32 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Player
 {
-    public int Id { get; set; }
-    public Vector3 Position { get; set; }
-
-    public Player(int id, Vector3 position)
+    public string sessionToken { get; private set; }
+    public Vector3 position { get; set; }
+    public Player()
     {
-        Id = id;
-        Position = position;
+        sessionToken = "";
+        position = Vector3.zero;
+    }
+
+    public Player(string sessionToken)
+    {
+        this.sessionToken = sessionToken;
+        position = Vector3.zero;
+    }
+
+    public Player(string sessionToken, Vector3 position)
+    {
+        this.sessionToken = sessionToken;
+        this.position = position;
     }
 
     public void UpdatePosition(Vector3 newPosition)
     {
-        Position = newPosition;
+        position = newPosition;
     }
 }
