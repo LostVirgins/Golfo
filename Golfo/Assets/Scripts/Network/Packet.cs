@@ -5,6 +5,13 @@ using System.Text;
 
 namespace lv.network
 {
+    public enum PacketType : byte
+    {
+        connection_request,
+        player_movement,
+        player_turn
+    }
+
     public class Packet
     {
         private MemoryStream m_memoryStream;
@@ -23,6 +30,7 @@ namespace lv.network
             m_reader = new BinaryReader(m_memoryStream);
         }
 
+        public void WriteByte(byte value) => m_writer.Write(value);
         public void WriteInt(int value) => m_writer.Write(value);
         public void WriteFloat(float value) => m_writer.Write(value);
         public void WriteVector3(Vector3 vec)
@@ -31,8 +39,13 @@ namespace lv.network
             WriteFloat(vec.Y);
             WriteFloat(vec.Z);
         }
-        public void WriteString(string value) => m_writer.Write(Encoding.UTF8.GetBytes(value));
+        public void WriteString(string text)
+        {
+            m_writer.Write(text.Length);
+            m_writer.Write(Encoding.UTF8.GetBytes(text));
+        }
 
+        public byte ReadByte() => m_reader.ReadByte();
         public int ReadInt() => m_reader.ReadInt32();
         public float ReadFloat() => m_reader.ReadSingle();
         public Vector3 ReadVector3()
@@ -42,7 +55,12 @@ namespace lv.network
             float z = ReadFloat();
             return new Vector3(x, y, z);
         }
-        public string ReadString() => Encoding.UTF8.GetString(m_reader.ReadBytes(m_reader.ReadInt32()));
+        public string ReadString()
+        {
+            int length = m_reader.ReadInt32();
+            byte[] stringBytes = m_reader.ReadBytes(length);
+            return Encoding.UTF8.GetString(stringBytes);
+        }
 
         public byte[] GetData()
         {

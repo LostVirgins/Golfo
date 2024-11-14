@@ -1,14 +1,19 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
-using System;
+using UnityEditor.Sprites;
 
 namespace lv.network
 {
     public class NetworkManager : MonoBehaviour
     {
         public static NetworkManager Instance { get; private set; }
+
+        private IPAddress m_serverIP = IPAddress.Parse("127.0.0.1");
+        private int m_serverPort = 9050;
 
         private UdpClient m_udpClient;
         private IPEndPoint m_serverEndPoint;
@@ -23,16 +28,38 @@ namespace lv.network
             m_udpClient.BeginReceive(OnReceiveData, null);
         }
 
+        public void Start()
+        {
+            StartHost();
+            JoinServer(m_serverIP.ToString());
+        }
+
         public void StartHost()
         {
             m_serverEndPoint = null;
             Debug.Log("Hosting game...");
+
+            if (m_udpClient == null)
+            {
+                m_udpClient = new UdpClient(m_serverPort);
+                m_udpClient.BeginReceive(OnReceiveData, null);
+            }
+
+            Debug.Log("Server up and running. Waiting for new Players...");
         }
 
         public void JoinServer(string ipAddress)
         {
-            m_serverEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), 9050);
+            m_serverEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
             Debug.Log("Joining server...");
+
+            Packet authReqPacket = new Packet();
+            authReqPacket.WriteByte((byte)PacketType.connection_request);
+            authReqPacket.WriteString("hekbas");
+
+            SendPacket(authReqPacket, m_serverEndPoint);
+
+            Debug.Log("Authentication request sent to server.");
         }
 
         private void OnReceiveData(IAsyncResult result)
@@ -40,37 +67,22 @@ namespace lv.network
             byte[] data = m_udpClient.EndReceive(result, ref m_serverEndPoint);
             Packet packet = new Packet(data);
 
-            int packetType = packet.ReadInt();
+            PacketType packetType = (PacketType)packet.ReadByte();
 
-            if (packetType == 0) // 0 = connection request (authentication)
+            if (packetType == PacketType.connection_request)
             {
-                AuthenticationStatus status = AuthenticationManager.Instance.AuthenticateClient(packet, m_serverEndPoint);
-
-                if (status == AuthenticationStatus.Success)
-                {
-                    string sessionToken = packet.ReadString();
-                    m_clientSessions[m_serverEndPoint] = sessionToken;
-
-                    Player newPlayer = new Player(sessionToken);
-                    m_connectedPlayers[m_serverEndPoint] = newPlayer;
-
-                    Debug.Log($"Player authenticated with session {sessionToken}");
-                }
-                else
-                {
-                    Debug.Log("Authentication failed.");
-                }
+                string username = packet.ReadString();
+                ConnectionRequest(username);
             }
             else
             {
                 string clientSessionToken = packet.ReadString();
-
                 AuthenticationStatus authStatus = AuthenticationManager.Instance.IsAuthenticated(m_serverEndPoint, clientSessionToken);
 
                 switch (authStatus)
                 {
                     case AuthenticationStatus.Success:
-                        ProcessGamePacket(packet, m_serverEndPoint);
+                        ProcessGamePacket(packet, packetType, m_serverEndPoint);
                         break;
 
                     case AuthenticationStatus.InvalidSession:
@@ -90,9 +102,16 @@ namespace lv.network
             m_udpClient.BeginReceive(OnReceiveData, null);
         }
 
-        private void ProcessGamePacket(Packet packet, IPEndPoint clientEndPoint)
+        private void ProcessGamePacket(Packet packet, PacketType packetType, IPEndPoint clientEndPoint)
         {
             Debug.Log("Processing game packet...");
+
+            switch (packetType)
+            {
+                case PacketType.player_movement:    ProccessPlayerMovement();  break;
+                case PacketType.player_turn:        ProccessPlayerTurn();      break;
+                default: break;
+            }
         }
 
         public void SendPacket(Packet packet, IPEndPoint endPoint = null)
@@ -105,6 +124,40 @@ namespace lv.network
         private void OnApplicationQuit()
         {
             m_udpClient.Close();
+        }
+
+
+
+        // Packet Managing -------------------------------
+
+        private void ConnectionRequest(string username)
+        {
+            string sessionToken = "";
+            AuthenticationStatus status = AuthenticationManager.Instance.AuthenticateClient(username, m_serverEndPoint, ref sessionToken);
+
+            if (status == AuthenticationStatus.Success)
+            {
+                m_clientSessions[m_serverEndPoint] = sessionToken;
+
+                Player newPlayer = new Player(sessionToken);
+                m_connectedPlayers[m_serverEndPoint] = newPlayer;
+
+                Debug.Log($"Player authenticated with session {sessionToken}");
+            }
+            else
+            {
+                Debug.Log("Authentication failed.");
+            }
+        }
+
+        private void ProccessPlayerMovement()
+        {
+            
+        }
+
+        private void ProccessPlayerTurn()
+        {
+
         }
     }
 }

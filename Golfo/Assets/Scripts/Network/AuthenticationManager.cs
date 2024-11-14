@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace lv.network
 {
-    public enum AuthenticationStatus
+    public enum AuthenticationStatus : byte
     {
         Success,
         Failure,
@@ -34,16 +34,13 @@ namespace lv.network
         }
 
         // Authenticates the client and returns the result as an AuthenticationStatus
-        public AuthenticationStatus AuthenticateClient(Packet packet, IPEndPoint clientEndPoint)
+        public AuthenticationStatus AuthenticateClient(string username, IPEndPoint clientEndPoint, ref string sessionToken)
         {
-            string username = packet.ReadString();
-
             if (IsValidUser(username))
             {
-                string sessionToken = GenerateSessionToken(username);
+                sessionToken = GenerateSessionToken(username);
                 m_authenticatedSessions[clientEndPoint] = sessionToken;
 
-                // Send a success packet back with the session token
                 Packet responsePacket = new Packet();
                 responsePacket.WriteInt((int)AuthenticationStatus.Success);
                 responsePacket.WriteString(sessionToken);
@@ -53,7 +50,6 @@ namespace lv.network
             }
             else
             {
-                // Send a failure packet back to the client
                 Packet responsePacket = new Packet();
                 responsePacket.WriteInt((int)AuthenticationStatus.Failure);
                 NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
