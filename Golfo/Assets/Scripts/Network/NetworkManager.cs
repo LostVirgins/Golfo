@@ -77,19 +77,19 @@ namespace lv.network
             else
             {
                 string clientSessionToken = packet.ReadString();
-                AuthenticationStatus authStatus = AuthenticationManager.Instance.IsAuthenticated(m_serverEndPoint, clientSessionToken);
+                PacketType authStatus = AuthenticationManager.Instance.IsAuthenticated(m_serverEndPoint, clientSessionToken);
 
                 switch (authStatus)
                 {
-                    case AuthenticationStatus.Success:
+                    case PacketType.auth_success:
                         ProcessGamePacket(packet, packetType, m_serverEndPoint);
                         break;
 
-                    case AuthenticationStatus.InvalidSession:
+                    case PacketType.invalid_session:
                         Debug.Log("Received packet with an invalid session token.");
                         break;
 
-                    case AuthenticationStatus.SessionExpired:
+                    case PacketType.expired_session:
                         Debug.Log("Received packet from a client with an expired session.");
                         break;
 
@@ -133,9 +133,9 @@ namespace lv.network
         private void ConnectionRequest(string username)
         {
             string sessionToken = "";
-            AuthenticationStatus status = AuthenticationManager.Instance.AuthenticateClient(username, m_serverEndPoint, ref sessionToken);
+            PacketType status = AuthenticationManager.Instance.AuthenticateClient(username, m_serverEndPoint, ref sessionToken);
 
-            if (status == AuthenticationStatus.Success)
+            if (status == PacketType.auth_success)
             {
                 m_clientSessions[m_serverEndPoint] = sessionToken;
 

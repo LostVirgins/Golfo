@@ -34,7 +34,7 @@ namespace lv.network
                 m_authenticatedSessions[clientEndPoint] = sessionToken;
 
                 Packet responsePacket = new Packet();
-                responsePacket.WriteInt((int)PacketType.auth_success);
+                responsePacket.WriteByte((int)PacketType.auth_success);
                 responsePacket.WriteString(sessionToken);
                 NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
 
@@ -43,7 +43,7 @@ namespace lv.network
             else
             {
                 Packet responsePacket = new Packet();
-                responsePacket.WriteInt((int)PacketType.auth_failure);
+                responsePacket.WriteByte((int)PacketType.auth_failure);
                 NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
 
                 return PacketType.auth_failure;
