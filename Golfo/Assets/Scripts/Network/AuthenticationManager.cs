@@ -17,7 +17,7 @@ namespace lv.network
         public static AuthenticationManager Instance { get; private set; }
 
         private Dictionary<IPEndPoint, string> m_authenticatedSessions = new Dictionary<IPEndPoint, string>();
-        private HashSet<string> m_validUsers = new HashSet<string> { "hekbas", "kikofp02", "IITROSDASEII" };
+        private HashSet<string> m_validUsers = new HashSet<string> { "hekbas", "kikofp02", "IITROSDASEII", "punto16", "chu3rk" };
 
 
         private void Awake()
@@ -68,13 +68,9 @@ namespace lv.network
             if (m_authenticatedSessions.TryGetValue(clientEndPoint, out string validToken))
             {
                 if (validToken == sessionToken)
-                {
                     return AuthenticationStatus.Success;
-                }
                 else
-                {
                     return AuthenticationStatus.InvalidSession;
-                }
             }
             else
             {
@@ -100,5 +96,4 @@ namespace lv.network
             }
         }
     }
-
 }
