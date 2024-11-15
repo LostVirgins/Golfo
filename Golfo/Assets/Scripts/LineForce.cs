@@ -59,7 +59,7 @@ public class LineForce : MonoBehaviour {
         Vector3 direction = (horizontalWorldPoint - transform.position).normalized;
         float strength = Vector3.Distance(transform.position, horizontalWorldPoint);
 
-        rigidbody.AddForce(direction * strength * shotPower);
+        rigidbody.AddForce(-direction * strength * shotPower);
         isIdle = false;
     }
 
