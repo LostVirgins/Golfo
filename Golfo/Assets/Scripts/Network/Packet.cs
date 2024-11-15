@@ -15,7 +15,8 @@ namespace lv.network
         expired_session,
 
         player_movement,
-        player_turn
+        player_turn,
+        chat_message
     }
 
     public class Packet

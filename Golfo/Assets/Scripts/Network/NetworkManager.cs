@@ -30,8 +30,8 @@ namespace lv.network
 
         public void Start()
         {
-            StartHost();
-            JoinServer(m_serverIP.ToString());
+            //StartHost();
+            //JoinServer(m_serverIP.ToString());
         }
 
         public void StartHost()
@@ -108,8 +108,8 @@ namespace lv.network
 
             switch (packetType)
             {
-                case PacketType.player_movement:    ProccessPlayerMovement();  break;
-                case PacketType.player_turn:        ProccessPlayerTurn();      break;
+                case PacketType.player_movement:    ProccessPlayerMovement();   break;
+                case PacketType.player_turn:        ProccessPlayerTurn();       break;
                 default: break;
             }
         }
