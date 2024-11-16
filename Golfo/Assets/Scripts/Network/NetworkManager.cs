@@ -23,34 +23,30 @@ namespace lv.network
         private void Awake()
         {
             Instance = this;
-            m_udpClient = new UdpClient(9050);
-            m_udpClient.BeginReceive(OnReceiveData, null);
         }
 
         public void Start()
         {
-            //StartHost();
-            //JoinServer(m_serverIP.ToString());
         }
 
         public void StartHost()
         {
-            m_serverEndPoint = null;
             Debug.Log("Hosting game...");
+            m_serverEndPoint = null;
 
-            if (m_udpClient == null)
-            {
-                m_udpClient = new UdpClient(m_serverPort);
-                m_udpClient.BeginReceive(OnReceiveData, null);
-            }
+            m_udpClient = new UdpClient(m_serverPort);
+            m_udpClient.BeginReceive(OnReceiveData, null);
 
             Debug.Log("Server up and running. Waiting for new Players...");
         }
 
         public void JoinServer(string ipAddress)
         {
-            m_serverEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
             Debug.Log("Joining server...");
+            m_serverEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
+
+            m_udpClient = new UdpClient(0);
+            m_udpClient.BeginReceive(OnReceiveData, null);
 
             Packet authReqPacket = new Packet();
             authReqPacket.WriteByte((byte)PacketType.connection_request);
