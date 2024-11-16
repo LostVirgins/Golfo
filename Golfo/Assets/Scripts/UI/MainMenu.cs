@@ -1,3 +1,4 @@
+using lv.network;
 using TMPro;
 using UnityEditor.MemoryProfiler;
 using UnityEngine;
@@ -16,7 +17,7 @@ public class MainMenu : MonoBehaviour
     public TMP_InputField inputLobyName;
     public TMP_InputField inputChatTxt;
 
-    public GameObject NetworkManager;
+    public GameObject NetworkManagerObj;
     public GameObject MessagePrefab;
     public GameObject ViewScrollContent;
 
@@ -73,10 +74,7 @@ public class MainMenu : MonoBehaviour
         lobyName = inputLobyName.text;
         LobyNameText.text = "Connected to - " + lobyName;
 
-        //if (tcp.isOn)
-        //    Conections.GetComponent<ServerTCP>().startServer(lobyName);
-        //else
-        //    Conections.GetComponent<ServerUDP>().startServer(lobyName);
+        NetworkManagerObj.GetComponent<NetworkManager>().StartHost();
 
         MainMenuSec.SetActive(false);
         LobyViewSec.SetActive(true);
@@ -88,10 +86,7 @@ public class MainMenu : MonoBehaviour
 
     public void JoinIP()
     {
-        //if (tcp.isOn)
-        //    Conections.GetComponent<ClientTCP>().StartClient(inputIP.text);
-        //else
-        //    Conections.GetComponent<ClientUDP>().StartClient(inputIP.text);
+        NetworkManagerObj.GetComponent<NetworkManager>().JoinServer(inputIP.text);
 
         MainMenuSec.SetActive(false);
         LobyViewSec.SetActive(true);

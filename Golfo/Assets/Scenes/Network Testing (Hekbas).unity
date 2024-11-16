@@ -5351,7 +5351,7 @@ MonoBehaviour:
   inputIP: {fileID: 219042255}
   inputLobyName: {fileID: 1753022588}
   inputChatTxt: {fileID: 83002231}
-  NetworkManager: {fileID: 676880904}
+  NetworkManagerObj: {fileID: 676880904}
   MessagePrefab: {fileID: 4959001620607176262, guid: 754190192ed5d2646ab958d5c1c49e11, type: 3}
   ViewScrollContent: {fileID: 1755460885}
   LobyNameText: {fileID: 1113359407}
