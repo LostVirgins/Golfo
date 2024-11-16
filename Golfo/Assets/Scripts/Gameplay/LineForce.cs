@@ -65,8 +65,8 @@ public class LineForce : MonoBehaviour {
 
     private void DrawLine(Vector3 worldPoint) {
         Vector3[] positions = {
-            transform.position,
-            worldPoint};
+            new Vector3(transform.position.x, transform.position.y, transform.position.z),
+            new Vector3(worldPoint.x, transform.position.y, worldPoint.z)};
         lineRenderer.SetPositions(positions);
         lineRenderer.enabled = true;
     }
@@ -78,21 +78,23 @@ public class LineForce : MonoBehaviour {
     }
 
     private Vector3? CastMouseClickRay() {
-        Vector3 screenMousePosFar = new Vector3(
-            Input.mousePosition.x,
-            Input.mousePosition.y,
-            Camera.main.farClipPlane);
-        Vector3 screenMousePosNear = new Vector3(
-            Input.mousePosition.x,
-            Input.mousePosition.y,
-            Camera.main.nearClipPlane);
-        Vector3 worldMousePosFar = Camera.main.ScreenToWorldPoint(screenMousePosFar);
-        Vector3 worldMousePosNear = Camera.main.ScreenToWorldPoint(screenMousePosNear);
-        RaycastHit hit;
-        if (Physics.Raycast(worldMousePosNear, worldMousePosFar - worldMousePosNear, out hit, float.PositiveInfinity)) {
-            return hit.point;
-        } else {
-            return null;
-        }
+
+        var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        var plane = new Plane(Vector3.up, rigidbody.position);
+
+        // Debug Direction Ray
+        //Debug.DrawRay(rigidbody.position, direction * 100, Color.red);
+
+        float rayDistance;
+        if (plane.Raycast(ray, out rayDistance)) {
+
+            // Debug Shot Ray
+            //Debug.DrawRay(rigidbody.position, ray.GetPoint(rayDistance), Color.yellow);
+
+            return ray.GetPoint(rayDistance);
+        }        
+
+        return null;
+
     }
 }
