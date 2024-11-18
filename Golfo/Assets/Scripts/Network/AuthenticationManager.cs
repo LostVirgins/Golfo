@@ -9,7 +9,7 @@ namespace lv.network
         public static AuthenticationManager Instance { get; private set; }
 
         private Dictionary<IPEndPoint, string> m_authenticatedSessions = new Dictionary<IPEndPoint, string>();
-        private HashSet<string> m_validUsers = new HashSet<string> { "hekbas", "kikofp02", "IITROSDASEII", "punto16", "chu3rk" };
+        private HashSet<string> m_validUsers = new HashSet<string> { "hekbas", "itsNick02", "IITROSDASEII", "punto16", "chu3rk" };
 
 
         private void Awake()
@@ -22,7 +22,7 @@ namespace lv.network
         {
             if (IsValidUser(username))
             {
-                sessionToken = GenerateSessionToken(username);
+                sessionToken = GenerateSessionToken();
                 m_authenticatedSessions[clientEndPoint] = sessionToken;
 
                 Packet responsePacket = new Packet();
@@ -58,22 +58,22 @@ namespace lv.network
             }
         }
 
-        private string GenerateSessionToken(string username)
+        public void RemoveSession(IPEndPoint clientEndPoint)
         {
-            return $"{username}_{System.Guid.NewGuid()}";
+            if (m_authenticatedSessions.ContainsKey(clientEndPoint))
+                m_authenticatedSessions.Remove(clientEndPoint);
+        }
+
+        private string GenerateSessionToken()
+        {
+            return $"{System.Guid.NewGuid()}";
         }
 
         private bool IsValidUser(string username)
         {
-            return m_validUsers.Contains(username);
-        }
-
-        public void RemoveSession(IPEndPoint clientEndPoint)
-        {
-            if (m_authenticatedSessions.ContainsKey(clientEndPoint))
-            {
-                m_authenticatedSessions.Remove(clientEndPoint);
-            }
+            //hekbas: implement friends only or blacklisting
+            //return m_validUsers.Contains(username);
+            return true;
         }
     }
 }

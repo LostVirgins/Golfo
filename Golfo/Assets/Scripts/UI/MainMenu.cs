@@ -86,7 +86,7 @@ public class MainMenu : MonoBehaviour
 
     public void JoinIP()
     {
-        NetworkManagerObj.GetComponent<NetworkManager>().JoinServer(inputIP.text);
+        NetworkManagerObj.GetComponent<NetworkManager>().JoinServer(inputIP.text, userName);
 
         MainMenuSec.SetActive(false);
         LobyViewSec.SetActive(true);

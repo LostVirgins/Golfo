@@ -1,3 +1,4 @@
+using lv.network;
 using UnityEngine;
 
 namespace lv.gameplay
@@ -64,6 +65,11 @@ namespace lv.gameplay
 
             rigidbody.AddForce(-direction * strength * shotPower);
             isIdle = false;
+
+            // Notify Server
+            Packet packet = new Packet();
+            packet.WriteByte((byte)PacketType.ball_strike);
+            packet.WriteString("");
         }
 
         private void DrawLine(Vector3 worldPoint)

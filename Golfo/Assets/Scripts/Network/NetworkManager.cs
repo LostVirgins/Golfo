@@ -41,10 +41,13 @@ namespace lv.network
             m_udpClient = new UdpClient(m_serverPort);
             m_udpClient.BeginReceive(OnReceiveData, null);
 
+            Player newPlayer = new Player($"{System.Guid.NewGuid()}", true);
+            m_connectedPlayers[m_serverEndPoint] = newPlayer;
+
             Debug.Log("Server up and running. Waiting for new Players...");
         }
 
-        public void JoinServer(string ipAddress)
+        public void JoinServer(string ipAddress, string username)
         {
             Debug.Log("Joining server...");
             m_serverEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
@@ -54,7 +57,7 @@ namespace lv.network
 
             Packet authReqPacket = new Packet();
             authReqPacket.WriteByte((byte)PacketType.connection_request);
-            authReqPacket.WriteString("player");
+            authReqPacket.WriteString(username);
 
             SendPacket(authReqPacket, m_serverEndPoint);
 
@@ -136,7 +139,7 @@ namespace lv.network
 
             if (status == PacketType.auth_success)
             {
-                Player newPlayer = new Player(sessionToken);
+                Player newPlayer = new Player(sessionToken, false);
                 m_connectedPlayers[m_serverEndPoint] = newPlayer;
 
                 Debug.Log($"Player authenticated with session {sessionToken}");
@@ -155,6 +158,18 @@ namespace lv.network
         private void ProccessPlayerTurn()
         {
 
+        }
+
+
+        // Get / Set --------------------------------------------
+        public List<Player> GetConnectedPlayers()
+        {
+            List<Player> players = new List<Player>();
+
+            foreach (var player in m_connectedPlayers.Values)
+                players.Add(player);
+
+            return players;
         }
     }
 }
