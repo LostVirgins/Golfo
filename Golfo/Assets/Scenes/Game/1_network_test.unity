@@ -7616,7 +7616,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Golf.O.
+  m_text: Golf O.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9c71e7dc4fa582f45a90c9718d7e42ad, type: 2}
   m_sharedMaterial: {fileID: 3314926322695027762, guid: 9c71e7dc4fa582f45a90c9718d7e42ad, type: 2}
