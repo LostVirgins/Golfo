@@ -2,7 +2,6 @@ using lv.network;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class MainMenu : MonoBehaviour
 {
@@ -101,6 +100,12 @@ public class MainMenu : MonoBehaviour
     public void StartGame()
     {
         SceneManager.LoadScene(sceneName: "2_game_test");
+
+        Packet gameStart = new Packet();
+        gameStart.WriteByte((byte)PacketType.game_start);
+        gameStart.WriteString("hekbas_todo_use_token_:)");
+
+        NetworkManager.Instance.m_outQueue.Enqueue(new PacketData(gameStart, NetworkManager.Instance.m_serverEndPoint, true));
     }
 
     public void ExitLoby()
@@ -127,28 +132,24 @@ public class MainMenu : MonoBehaviour
     {
         InstantiateMessage(message);
 
+        Packet chatMessage = new Packet(); 
+        chatMessage.WriteByte((byte)PacketType.chat_message);
+        chatMessage.WriteString("hekbas_todo_use_token_:)");
+        chatMessage.WriteString(message);
 
-        //if (isHost)
-        //{
-        //    if (tcp.isOn)
-        //        Conections.GetComponent<ServerTCP>().BroadcastMessageServer(message, null);
-        //    else
-        //        Conections.GetComponent<ServerUDP>().BroadcastMessageServer(message, null);
-        //}
-        //else
-        //{
-        //    if (tcp.isOn)
-        //        Conections.GetComponent<ClientTCP>().Send(message);
-        //    else
-        //        Conections.GetComponent<ClientUDP>().Send(message);
-        //}
+        NetworkManager.Instance.m_outQueue.Enqueue(new PacketData(chatMessage, NetworkManager.Instance.m_serverEndPoint));
+    }
+
+    public void PrintReceivedMessage(string message)
+    {
+        InstantiateMessage(message);
     }
 
     public void InstantiateMessage(string message)
     {
-        GameObject messageObject = Instantiate(MessagePrefab, ViewScrollContent.transform);
+        Debug.Log("Instaniated Message");
 
-        Debug.Log("Instaniated Object");
+        GameObject messageObject = Instantiate(MessagePrefab, ViewScrollContent.transform);
 
         TextMeshProUGUI messageTextComponent = messageObject.GetComponentInChildren<TextMeshProUGUI>();
         if (messageTextComponent != null)
@@ -173,12 +174,18 @@ public class MainMenu : MonoBehaviour
     private void OnEnable()
     {
         if (NetworkManager.Instance != null)
-            NetworkManager.Instance.OnLobbyNameReceived.AddListener(SetLobbyName);
+        {
+            NetworkManager.Instance.OnReceiveLobbyName.AddListener(SetLobbyName);
+            NetworkManager.Instance.OnReceiveChatMessage.AddListener(PrintReceivedMessage);
+        }
     }
 
     private void OnDisable()
     {
         if (NetworkManager.Instance != null)
-            NetworkManager.Instance.OnLobbyNameReceived.RemoveListener(SetLobbyName);
+        {
+            NetworkManager.Instance.OnReceiveLobbyName.RemoveListener(SetLobbyName);
+            NetworkManager.Instance.OnReceiveChatMessage.RemoveListener(PrintReceivedMessage);
+        }
     }
 }

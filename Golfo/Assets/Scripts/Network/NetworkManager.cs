@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 namespace lv.network
 {
     public class LobbyNameEvent : UnityEvent<string> { }
+    public class ChatMessageEvent : UnityEvent<string> { }
 
     public class NetworkManager : MonoBehaviour
     {
@@ -16,9 +17,8 @@ namespace lv.network
 
         private IPAddress m_serverIP = IPAddress.Parse("127.0.0.1");
         private int m_serverPort = 9050;
-
+        public IPEndPoint m_serverEndPoint { get; private set; }
         private UdpClient m_udpClient;
-        private IPEndPoint m_serverEndPoint;
         private Dictionary<IPEndPoint, Player> m_connectedPlayers = new Dictionary<IPEndPoint, Player>();
 
         public Queue<PacketData> m_outQueue { get; private set; } = new Queue<PacketData>();
@@ -29,7 +29,8 @@ namespace lv.network
         public bool isHost;
         public string m_lobbyName;
 
-        public LobbyNameEvent OnLobbyNameReceived = new LobbyNameEvent();
+        public LobbyNameEvent OnReceiveLobbyName = new LobbyNameEvent();
+        public ChatMessageEvent OnReceiveChatMessage = new ChatMessageEvent();
 
         private void Awake()
         {
@@ -119,7 +120,9 @@ namespace lv.network
             else
             {
                 string clientSessionToken = packet.ReadString();
-                PacketType authStatus = AuthenticationManager.Instance.IsAuthenticated(m_serverEndPoint, clientSessionToken);
+                //hekbas: manage authentication correctly in the future
+                //PacketType authStatus = AuthenticationManager.Instance.IsAuthenticated(senderEndPoint, clientSessionToken);
+                PacketType authStatus = PacketType.auth_success;
 
                 switch (authStatus)
                 {
@@ -148,12 +151,13 @@ namespace lv.network
 
             switch (packetType)
             {
-                case PacketType.lobby_name:     LobbyName(packet);  break;
-                case PacketType.game_start:     GameStart();        break;
-                case PacketType.game_end:       GameEnd();          break;
-                case PacketType.ball_strike:    BallStrike();       break;
-                case PacketType.player_turn:    PlayerTurn();       break;
-                default: Debug.Log("Packet Type not found.");       break;
+                case PacketType.lobby_name:     LobbyName(packet);      break;
+                case PacketType.chat_message:   ChatMessage(packet);    break;
+                case PacketType.game_start:     GameStart();            break;
+                case PacketType.game_end:       GameEnd();              break;
+                case PacketType.ball_strike:    BallStrike();           break;
+                case PacketType.player_turn:    PlayerTurn();           break;
+                default: Debug.Log("Packet Type not found.");           break;
             }
         }
 
@@ -175,6 +179,13 @@ namespace lv.network
             //hekbas: todo don't resend to origin
             foreach (var client in m_connectedPlayers.Keys)
                 SendPacket(packetData.m_packet, client);
+        }
+
+        private void BroadcastPacket(Packet packet)
+        {
+            //hekbas: todo don't resend to origin
+            foreach (var client in m_connectedPlayers.Keys)
+                SendPacket(packet, client);
         }
 
         private void AddPlayer(string sessionToken, IPEndPoint senderEndPoint)
@@ -217,7 +228,15 @@ namespace lv.network
             if (isHost)
                 SendPacket(packet);
             else
-                OnLobbyNameReceived.Invoke(packet.ReadString());
+                OnReceiveLobbyName.Invoke(packet.ReadString());
+        }
+        
+        private void ChatMessage(Packet packet)
+        {
+            if (isHost)
+                BroadcastPacket(packet);
+            else
+                OnReceiveChatMessage.Invoke(packet.ReadString());
         }
 
         private void GameStart()
