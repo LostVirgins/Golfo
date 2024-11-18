@@ -80,6 +80,7 @@ public class MainMenu : MonoBehaviour
         LobyViewSec.SetActive(true);
         ConnectionSec.SetActive(true);
         HostServer.SetActive(false);
+        Play.SetActive(true);
         isHost = true;
         isChatting = true;
     }
