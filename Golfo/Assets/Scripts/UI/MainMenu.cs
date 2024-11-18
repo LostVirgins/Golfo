@@ -1,6 +1,7 @@
 using lv.network;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainMenu : MonoBehaviour
@@ -94,6 +95,11 @@ public class MainMenu : MonoBehaviour
         isChatting = true;
     }
 
+    public void StartGame()
+    {
+        SceneManager.LoadScene(sceneName: "2_game_test");
+    }
+
     public void ExitLoby()
     {
         if (isHost)
@@ -116,7 +122,7 @@ public class MainMenu : MonoBehaviour
 
     public void OnSendMessage(string message)
     {
-        InstanciateMessage(message);
+        InstantiateMessage(message);
 
 
         //if (isHost)
@@ -135,7 +141,7 @@ public class MainMenu : MonoBehaviour
         //}
     }
 
-    public void InstanciateMessage(string message)
+    public void InstantiateMessage(string message)
     {
         GameObject messageObject = Instantiate(MessagePrefab, ViewScrollContent.transform);
 

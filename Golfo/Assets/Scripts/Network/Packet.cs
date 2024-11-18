@@ -14,9 +14,17 @@ namespace lv.network
         invalid_session,
         expired_session,
 
-        player_movement,
+        // server to client
+        player_position,
         player_turn,
-        chat_message
+        chat_message,
+
+        // client to server
+        ball_strike,
+
+        item_get,
+        item_use,
+        item_steal
     }
 
     public class Packet

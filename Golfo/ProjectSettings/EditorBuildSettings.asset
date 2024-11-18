@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Network Testing (Hekbas).unity
+    path: Assets/Scenes/Hekbas/1_network_test.unity
     guid: a0f86298d9ff5be48846b3964de1b1cf
+  - enabled: 1
+    path: Assets/Scenes/Hekbas/2_game_test.unity
+    guid: 56528d1db2cf3ff4995b399290739100
   m_configObjects: {}

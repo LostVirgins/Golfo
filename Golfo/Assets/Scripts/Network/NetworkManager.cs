@@ -17,12 +17,16 @@ namespace lv.network
         private UdpClient m_udpClient;
         private IPEndPoint m_serverEndPoint;
         private Dictionary<IPEndPoint, Player> m_connectedPlayers = new Dictionary<IPEndPoint, Player>();
-        private Dictionary<IPEndPoint, string> m_clientSessions = new Dictionary<IPEndPoint, string>();
+
+        private PacketQueue m_packetQueue = new PacketQueue();
+        private float m_sendInterval = 0.05f;
+        private float m_lastSendTime = 0f;
 
 
         private void Awake()
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
         public void Start()
@@ -50,7 +54,7 @@ namespace lv.network
 
             Packet authReqPacket = new Packet();
             authReqPacket.WriteByte((byte)PacketType.connection_request);
-            authReqPacket.WriteString("hekbas");
+            authReqPacket.WriteString("player");
 
             SendPacket(authReqPacket, m_serverEndPoint);
 
@@ -103,8 +107,8 @@ namespace lv.network
 
             switch (packetType)
             {
-                case PacketType.player_movement:    ProccessPlayerMovement();   break;
-                case PacketType.player_turn:        ProccessPlayerTurn();       break;
+                case PacketType.ball_strike:    BallStrike();   break;
+                case PacketType.player_turn:    ProccessPlayerTurn();   break;
                 default: break;
             }
         }
@@ -132,8 +136,6 @@ namespace lv.network
 
             if (status == PacketType.auth_success)
             {
-                m_clientSessions[m_serverEndPoint] = sessionToken;
-
                 Player newPlayer = new Player(sessionToken);
                 m_connectedPlayers[m_serverEndPoint] = newPlayer;
 
@@ -145,7 +147,7 @@ namespace lv.network
             }
         }
 
-        private void ProccessPlayerMovement()
+        private void BallStrike()
         {
             
         }
