@@ -1,18 +1,19 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Bound : MonoBehaviour
+namespace lv.gameplay
 {
-    [SerializeField] private GameObject spawner;
-
-    private void OnTriggerExit(Collider collider)
+    public class Bound : MonoBehaviour
     {
-        if (collider.CompareTag("Player"))
+        [SerializeField] private GameObject spawner;
+
+        private void OnTriggerExit(Collider collider)
         {
-            collider.gameObject.transform.position = spawner.transform.position;
-            collider.attachedRigidbody.velocity = Vector3.zero;
-            collider.attachedRigidbody.angularVelocity = Vector3.zero;
+            if (collider.CompareTag("Player"))
+            {
+                collider.gameObject.transform.position = spawner.transform.position;
+                collider.attachedRigidbody.velocity = Vector3.zero;
+                collider.attachedRigidbody.angularVelocity = Vector3.zero;
+            }
         }
     }
 }

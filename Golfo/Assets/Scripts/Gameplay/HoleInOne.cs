@@ -1,16 +1,16 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
-public class HoleInOne : MonoBehaviour
+namespace lv.gameplay
 {
-    private void OnTriggerEnter(Collider other)
+    public class HoleInOne : MonoBehaviour
     {
-        if (other.CompareTag("Player"))
+        private void OnTriggerEnter(Collider other)
         {
-            other.gameObject.GetComponent<Collider>().enabled = false;
-            other.gameObject.GetComponent<Rigidbody>().isKinematic = true;
+            if (other.CompareTag("Player"))
+            {
+                other.gameObject.GetComponent<Collider>().enabled = false;
+                other.gameObject.GetComponent<Rigidbody>().isKinematic = true;
+            }
         }
     }
 }

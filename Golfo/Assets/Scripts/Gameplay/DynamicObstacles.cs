@@ -1,67 +1,67 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 using UnityEngine.UIElements.Experimental;
 
-public class DynamicObstacles : MonoBehaviour
+namespace lv.gameplay
 {
-    [SerializeField] private Vector3 m_destinyPos;
-    [SerializeField] private float m_speed;
-
-    private Rigidbody m_rb;
-
-    private Vector3 m_startPos;
-
-    private float m_rateSpeed;
-    private float m_timeToDestiny;
-    private float m_timeToStart;
-
-    private bool m_changeDir;
-
-    private void Awake()
+    public class DynamicObstacles : MonoBehaviour
     {
-        m_rb = GetComponent<Rigidbody>();
-    }
+        [SerializeField] private Vector3 m_destinyPos;
+        [SerializeField] private float m_speed;
 
-    private void Start()
-    {
-        m_startPos = transform.position;
-        m_rateSpeed = 1f / Vector3.Distance(m_startPos, m_destinyPos) * m_speed;
-        m_changeDir = false;
-        
-    }
+        private Rigidbody m_rb;
 
-    private void Update()
-    {
-        //Easing.InOutSine()
+        private Vector3 m_startPos;
 
-        if (m_timeToDestiny <= 1f && !m_changeDir)
+        private float m_rateSpeed;
+        private float m_timeToDestiny;
+        private float m_timeToStart;
+
+        private bool m_changeDir;
+
+        private void Awake()
         {
-            m_timeToDestiny += Time.deltaTime * m_rateSpeed;
-            float easedTime = Easing.InOutSine(m_timeToDestiny);
-
-            transform.position = Vector3.Lerp(m_startPos, m_destinyPos, easedTime);
-        }
-        else
-        {
-            m_changeDir = true;
-            m_timeToDestiny = 0f;
-            Debug.Log("changed_1");
+            m_rb = GetComponent<Rigidbody>();
         }
 
-        if (m_timeToStart <= 1f && m_changeDir)
+        private void Start()
         {
-            m_timeToStart += Time.deltaTime * m_rateSpeed;
-            float easedTime = Easing.InOutSine(m_timeToStart);
-
-            transform.position = Vector3.Lerp(m_destinyPos, m_startPos, easedTime);
-        }
-        else
-        {
+            m_startPos = transform.position;
+            m_rateSpeed = 1f / Vector3.Distance(m_startPos, m_destinyPos) * m_speed;
             m_changeDir = false;
-            m_timeToStart = 0f;
-            Debug.Log("changed_2");
+
+        }
+
+        private void Update()
+        {
+            //Easing.InOutSine()
+
+            if (m_timeToDestiny <= 1f && !m_changeDir)
+            {
+                m_timeToDestiny += Time.deltaTime * m_rateSpeed;
+                float easedTime = Easing.InOutSine(m_timeToDestiny);
+
+                transform.position = Vector3.Lerp(m_startPos, m_destinyPos, easedTime);
+            }
+            else
+            {
+                m_changeDir = true;
+                m_timeToDestiny = 0f;
+                Debug.Log("changed_1");
+            }
+
+            if (m_timeToStart <= 1f && m_changeDir)
+            {
+                m_timeToStart += Time.deltaTime * m_rateSpeed;
+                float easedTime = Easing.InOutSine(m_timeToStart);
+
+                transform.position = Vector3.Lerp(m_destinyPos, m_startPos, easedTime);
+            }
+            else
+            {
+                m_changeDir = false;
+                m_timeToStart = 0f;
+                Debug.Log("changed_2");
+            }
         }
     }
 }
