@@ -21,7 +21,8 @@ namespace lv.network
         private IPEndPoint m_serverEndPoint;
         private Dictionary<IPEndPoint, Player> m_connectedPlayers = new Dictionary<IPEndPoint, Player>();
 
-        public Queue<PacketData> m_packetQueue { get; private set; } = new Queue<PacketData>();
+        public Queue<PacketData> m_outQueue { get; private set; } = new Queue<PacketData>();
+        public Queue<PacketData> m_inQueue { get; private set; } = new Queue<PacketData>();
         private float m_sendInterval = 0.05f;
         private float m_lastSendTime = 0f;
 
@@ -41,10 +42,21 @@ namespace lv.network
 
         public void Update()
         {
-            while (m_packetQueue.Count != 0)
+            while (m_outQueue.Count != 0)
             {
-                if (m_packetQueue.TryDequeue(out PacketData packetData))
-                    ProcessPacket(packetData.m_packet, packetData.m_senderEP);
+                if (m_outQueue.TryDequeue(out PacketData packetData))
+                {
+                    if (packetData.m_isBroadCast)
+                        BroadcastPacket(packetData);
+                    else
+                        SendPacket(packetData);
+                }
+            }
+
+            while (m_inQueue.Count != 0)
+            {
+                if (m_inQueue.TryDequeue(out PacketData packetData))
+                    ProcessPacket(packetData.m_packet, packetData.m_remoteEP);
             }
         }
 
@@ -74,11 +86,11 @@ namespace lv.network
             m_udpClient = new UdpClient(0);
             m_udpClient.BeginReceive(OnReceiveData, null);
 
-            Packet authReqPacket = new Packet();
-            authReqPacket.WriteByte((byte)PacketType.connection_request);
-            authReqPacket.WriteString(username);
+            Packet authReq = new Packet();
+            authReq.WriteByte((byte)PacketType.connection_request);
+            authReq.WriteString(username);
 
-            SendPacket(authReqPacket, m_serverEndPoint);
+            m_outQueue.Enqueue(new PacketData(authReq, m_serverEndPoint));
 
             Debug.Log("Authentication request sent to server.");
         }
@@ -88,13 +100,15 @@ namespace lv.network
             IPEndPoint senderEP = new IPEndPoint(0, 0);
             byte[] data = m_udpClient.EndReceive(result, ref senderEP);
             Packet packet = new Packet(data);
-            m_packetQueue.Enqueue(new PacketData(packet, senderEP));
+            m_inQueue.Enqueue(new PacketData(packet, senderEP));
 
             m_udpClient.BeginReceive(OnReceiveData, null);
         }
 
         private void ProcessPacket(Packet packet, IPEndPoint senderEndPoint)
         {
+            Debug.Log($"Processing packet from {senderEndPoint}");
+
             packet.SetStreamPos(0);
             PacketType packetType = (PacketType)packet.ReadByte();
 
@@ -139,14 +153,14 @@ namespace lv.network
                 case PacketType.game_end:       GameEnd();          break;
                 case PacketType.ball_strike:    BallStrike();       break;
                 case PacketType.player_turn:    PlayerTurn();       break;
-                default: break;
+                default: Debug.Log("Packet Type not found.");       break;
             }
         }
 
         private void SendPacket(PacketData packetData)
         {
             byte[] data = packetData.m_packet.GetData();
-            m_udpClient.Send(data, data.Length, packetData.m_senderEP);
+            m_udpClient.Send(data, data.Length, packetData.m_remoteEP);
         }
 
         private void SendPacket(Packet packet, IPEndPoint endPoint = null)
@@ -156,10 +170,11 @@ namespace lv.network
             m_udpClient.Send(data, data.Length, endPoint);
         }
 
-        private void BroadcastPacket(Packet packet)
+        private void BroadcastPacket(PacketData packetData)
         {
+            //hekbas: todo don't resend to origin
             foreach (var client in m_connectedPlayers.Keys)
-                SendPacket(packet, client);
+                SendPacket(packetData.m_packet, client);
         }
 
         private void AddPlayer(string sessionToken, IPEndPoint senderEndPoint)
@@ -189,7 +204,7 @@ namespace lv.network
                 lobbyNamePacket.WriteByte((byte)PacketType.lobby_name);
                 lobbyNamePacket.WriteString(sessionToken);
                 lobbyNamePacket.WriteString(m_lobbyName);
-                m_packetQueue.Enqueue(new PacketData(lobbyNamePacket, m_serverEndPoint));
+                m_outQueue.Enqueue(new PacketData(lobbyNamePacket, senderEndPoint));
             }
             else
             {

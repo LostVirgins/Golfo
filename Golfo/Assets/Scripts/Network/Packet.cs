@@ -106,12 +106,14 @@ namespace lv.network
     public class PacketData
     {
         public Packet m_packet { get; private set; }
-        public IPEndPoint m_senderEP { get; private set; }
+        public IPEndPoint m_remoteEP { get; private set; }
+        public bool m_isBroadCast { get; private set; }
 
-        public PacketData(Packet packet, IPEndPoint senderEP)
+        public PacketData(Packet packet, IPEndPoint remoteEP, bool isBroadCast = false)
         {
             m_packet = packet;
-            m_senderEP = senderEP;
+            m_remoteEP = remoteEP;
+            m_isBroadCast= isBroadCast;
         }
     }
 }

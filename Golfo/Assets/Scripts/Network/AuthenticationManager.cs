@@ -28,7 +28,7 @@ namespace lv.network
                 Packet responsePacket = new Packet();
                 responsePacket.WriteByte((byte)PacketType.auth_success);
                 responsePacket.WriteString(sessionToken);
-                NetworkManager.Instance.m_packetQueue.Enqueue(new PacketData(responsePacket, clientEndPoint));
+                NetworkManager.Instance.m_outQueue.Enqueue(new PacketData(responsePacket, clientEndPoint));
 
                 return PacketType.auth_success;
             }
@@ -36,7 +36,7 @@ namespace lv.network
             {
                 Packet responsePacket = new Packet();
                 responsePacket.WriteByte((byte)PacketType.auth_failure);
-                NetworkManager.Instance.m_packetQueue.Enqueue(new PacketData(responsePacket, clientEndPoint));
+                NetworkManager.Instance.m_outQueue.Enqueue(new PacketData(responsePacket, clientEndPoint));
 
                 return PacketType.auth_failure;
             }
