@@ -11,6 +11,7 @@ public class MainMenu : MonoBehaviour
     public GameObject HostServer;
     public GameObject JoinServer;
     public GameObject LobyViewSec;
+    public GameObject Play;
 
     public TMP_InputField inputUsername;
     public TMP_InputField inputIP;
@@ -24,7 +25,7 @@ public class MainMenu : MonoBehaviour
     public TMP_Text LobyNameText;
 
     public string userName = "";
-    public string lobyName = "Connected to - ";
+    public string lobbyName = "";
     bool isHost = false;
     bool isChatting = false;
 
@@ -71,8 +72,8 @@ public class MainMenu : MonoBehaviour
 
     public void StartHost()
     {
-        lobyName = inputLobyName.text;
-        LobyNameText.text = "Connected to - " + lobyName;
+        lobbyName = inputLobyName.text;
+        LobyNameText.text = "Lobby: " + lobbyName;
 
         NetworkManagerObj.GetComponent<NetworkManager>().StartHost();
 
@@ -91,6 +92,7 @@ public class MainMenu : MonoBehaviour
         MainMenuSec.SetActive(false);
         LobyViewSec.SetActive(true);
         ConnectionSec.SetActive(true);
+        Play.SetActive(false);
         JoinServer.SetActive(false);
         isChatting = true;
     }
@@ -159,5 +161,23 @@ public class MainMenu : MonoBehaviour
     {
         RectTransform contentRect = ViewScrollContent.transform.GetComponent<RectTransform>();
         contentRect.anchoredPosition = new Vector2(contentRect.anchoredPosition.x, 0);
+    }
+
+    private void OnEnable()
+    {
+        // Subscribe to the event
+        if (NetworkManager.Instance != null)
+        {
+            NetworkManager.Instance.OnLobbyNameReceived.AddListener(SetLobbyName);
+        }
+    }
+
+    private void OnDisable()
+    {
+        // Unsubscribe from the event
+        if (NetworkManager.Instance != null)
+        {
+            NetworkManager.Instance.OnLobbyNameReceived.RemoveListener(SetLobbyName);
+        }
     }
 }

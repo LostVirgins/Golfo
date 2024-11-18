@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Numerics;
 using System.Text;
 
@@ -15,6 +16,10 @@ namespace lv.network
         expired_session,
 
         // server to client
+        lobby_name,
+        game_start,
+        game_end,
+
         player_position,
         player_turn,
         chat_message,
@@ -88,6 +93,18 @@ namespace lv.network
             m_writer?.Close();
             m_reader?.Close();
             m_memoryStream?.Close();
+        }
+    }
+
+    public class PacketData
+    {
+        public Packet Packet { get; private set; }
+        public IPEndPoint EndPoint { get; private set; }
+
+        public PacketData(Packet packet, IPEndPoint endPoint)
+        {
+            Packet = packet;
+            EndPoint = endPoint;
         }
     }
 }

@@ -6,14 +6,14 @@ namespace lv.network
 {
     public class PacketQueue : MonoBehaviour
     {
-        private Queue<Packet> m_packetQueue;
+        private Queue<PacketData> m_packetQueue;
 
-        public void Enqueu(Packet packet)
+        public void Enqueue(PacketData packet)
         {
             m_packetQueue.Enqueue(packet);
         }
 
-        public bool Dequeu(out Packet packet)
+        public bool Dequeue(out PacketData packet)
         {
             return m_packetQueue.TryDequeue(out packet);
         }

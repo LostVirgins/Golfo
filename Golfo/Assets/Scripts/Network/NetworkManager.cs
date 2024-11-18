@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace lv.network
 {
@@ -22,21 +23,31 @@ namespace lv.network
         private float m_sendInterval = 0.05f;
         private float m_lastSendTime = 0f;
 
+        public string m_lobbyName = "";
+
 
         private void Awake()
         {
             Instance = this;
+            m_serverEndPoint = null;
             DontDestroyOnLoad(gameObject);
         }
 
-        public void Start()
+        public void Start() { }
+
+        public void Update()
         {
+            while (!m_packetQueue.IsEmpty)
+            {
+                if (m_packetQueue.Dequeue(out PacketData packetData))
+                    ProcessPacket(packetData.Packet, packetData.EndPoint);
+            }
         }
 
         public void StartHost()
         {
             Debug.Log("Hosting game...");
-            m_serverEndPoint = null;
+            m_serverEndPoint = new IPEndPoint(m_serverIP, m_serverPort);
 
             m_udpClient = new UdpClient(m_serverPort);
             m_udpClient.BeginReceive(OnReceiveData, null);
@@ -68,7 +79,13 @@ namespace lv.network
         {
             byte[] data = m_udpClient.EndReceive(result, ref m_serverEndPoint);
             Packet packet = new Packet(data);
+            m_packetQueue.Enqueue(new PacketData(packet, m_serverEndPoint));
 
+            m_udpClient.BeginReceive(OnReceiveData, null);
+        }
+
+        private void ProcessPacket(Packet packet, IPEndPoint clientEndPoint)
+        {
             PacketType packetType = (PacketType)packet.ReadByte();
 
             if (packetType == PacketType.connection_request)
@@ -100,8 +117,6 @@ namespace lv.network
                         break;
                 }
             }
-
-            m_udpClient.BeginReceive(OnReceiveData, null);
         }
 
         private void ProcessGamePacket(Packet packet, PacketType packetType, IPEndPoint clientEndPoint)
@@ -110,8 +125,11 @@ namespace lv.network
 
             switch (packetType)
             {
-                case PacketType.ball_strike:    BallStrike();   break;
-                case PacketType.player_turn:    ProccessPlayerTurn();   break;
+                case PacketType.lobby_name:     LobbyName(packet);  break;
+                case PacketType.game_start:     GameStart();        break;
+                case PacketType.game_end:       GameEnd();          break;
+                case PacketType.ball_strike:    BallStrike();       break;
+                case PacketType.player_turn:    PlayerTurn();       break;
                 default: break;
             }
         }
@@ -129,9 +147,7 @@ namespace lv.network
         }
 
 
-
-        // Packet Managing -------------------------------
-
+        // Packet Processing -------------------------------
         private void ConnectionRequest(string username)
         {
             string sessionToken = "";
@@ -141,8 +157,12 @@ namespace lv.network
             {
                 Player newPlayer = new Player(sessionToken, false);
                 m_connectedPlayers[m_serverEndPoint] = newPlayer;
-
                 Debug.Log($"Player authenticated with session {sessionToken}");
+
+                Packet packet = new Packet();
+                packet.WriteByte((byte)PacketType.lobby_name);
+                packet.WriteString(m_lobbyName);
+                m_packetQueue.Enqueue(packet);
             }
             else
             {
@@ -150,12 +170,26 @@ namespace lv.network
             }
         }
 
-        private void BallStrike()
+        private void LobbyName(Packet packet)
         {
-            
+            m_lobbyName = packet.ReadString();
+        }
+        private void GameStart()
+        {
+            SceneManager.LoadScene(sceneName: "2_game_test");
         }
 
-        private void ProccessPlayerTurn()
+        private void GameEnd()
+        {
+
+        }
+
+        private void BallStrike()
+        {
+
+        }
+
+        private void PlayerTurn()
         {
 
         }

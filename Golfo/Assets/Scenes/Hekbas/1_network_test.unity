@@ -5614,6 +5614,7 @@ MonoBehaviour:
   HostServer: {fileID: 388648018}
   JoinServer: {fileID: 131312863}
   LobyViewSec: {fileID: 2067828417}
+  Play: {fileID: 404995509}
   inputUsername: {fileID: 2000031861}
   inputIP: {fileID: 219042255}
   inputLobyName: {fileID: 1753022588}
