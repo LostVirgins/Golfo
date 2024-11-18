@@ -15,7 +15,7 @@ namespace lv.network
         invalid_session,
         expired_session,
 
-        // server to client
+        // host to client
         lobby_name,
         game_start,
         game_end,
@@ -24,7 +24,7 @@ namespace lv.network
         player_turn,
         chat_message,
 
-        // client to server
+        // client to host
         ball_strike,
 
         item_get,
@@ -35,12 +35,13 @@ namespace lv.network
     public class Packet
     {
         private MemoryStream m_memoryStream;
-        private BinaryWriter m_writer;
         private BinaryReader m_reader;
+        private BinaryWriter m_writer;
 
         public Packet()
         {
             m_memoryStream = new MemoryStream();
+            m_reader = new BinaryReader(m_memoryStream);
             m_writer = new BinaryWriter(m_memoryStream);
         }
 
@@ -48,6 +49,12 @@ namespace lv.network
         {
             m_memoryStream = new MemoryStream(data);
             m_reader = new BinaryReader(m_memoryStream);
+            m_writer = new BinaryWriter(m_memoryStream);
+        }
+
+        public void SetStreamPos(long pos)
+        {
+            m_memoryStream.Position = pos;
         }
 
         public void WriteByte(byte value) => m_writer.Write(value);
@@ -98,13 +105,13 @@ namespace lv.network
 
     public class PacketData
     {
-        public Packet Packet { get; private set; }
-        public IPEndPoint EndPoint { get; private set; }
+        public Packet m_packet { get; private set; }
+        public IPEndPoint m_senderEP { get; private set; }
 
-        public PacketData(Packet packet, IPEndPoint endPoint)
+        public PacketData(Packet packet, IPEndPoint senderEP)
         {
-            Packet = packet;
-            EndPoint = endPoint;
+            m_packet = packet;
+            m_senderEP = senderEP;
         }
     }
 }

@@ -2457,6 +2457,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c152c35febbf6e4dadbd0d2206c7949, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isHost: 0
+  m_lobbyName: 
 --- !u!1 &704167223
 GameObject:
   m_ObjectHideFlags: 0
@@ -3756,7 +3758,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Connected to - la madre del hekbas las tiene enormes
+  m_text: 'Lobby: { no name set }'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -5624,7 +5626,7 @@ MonoBehaviour:
   ViewScrollContent: {fileID: 1755460885}
   LobyNameText: {fileID: 1113359407}
   userName: 
-  lobyName: 'Connected to - '
+  lobbyName: 
 --- !u!1 &2067828417
 GameObject:
   m_ObjectHideFlags: 0

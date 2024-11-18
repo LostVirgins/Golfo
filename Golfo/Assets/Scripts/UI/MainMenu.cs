@@ -75,7 +75,7 @@ public class MainMenu : MonoBehaviour
         lobbyName = inputLobyName.text;
         LobyNameText.text = "Lobby: " + lobbyName;
 
-        NetworkManagerObj.GetComponent<NetworkManager>().StartHost();
+        NetworkManagerObj.GetComponent<NetworkManager>().StartHost(lobbyName);
 
         MainMenuSec.SetActive(false);
         LobyViewSec.SetActive(true);
@@ -87,7 +87,8 @@ public class MainMenu : MonoBehaviour
 
     public void JoinIP()
     {
-        NetworkManagerObj.GetComponent<NetworkManager>().JoinServer(inputIP.text, userName);
+        string serverIP = string.IsNullOrEmpty(inputIP.text) ? "127.0.0.1" : inputIP.text;
+        NetworkManagerObj.GetComponent<NetworkManager>().JoinServer(serverIP, userName);
 
         MainMenuSec.SetActive(false);
         LobyViewSec.SetActive(true);
@@ -163,21 +164,21 @@ public class MainMenu : MonoBehaviour
         contentRect.anchoredPosition = new Vector2(contentRect.anchoredPosition.x, 0);
     }
 
+    public void SetLobbyName(string name)
+    {
+        lobbyName = name;
+        LobyNameText.text = "Lobby: " + lobbyName;
+    }
+
     private void OnEnable()
     {
-        // Subscribe to the event
         if (NetworkManager.Instance != null)
-        {
             NetworkManager.Instance.OnLobbyNameReceived.AddListener(SetLobbyName);
-        }
     }
 
     private void OnDisable()
     {
-        // Unsubscribe from the event
         if (NetworkManager.Instance != null)
-        {
             NetworkManager.Instance.OnLobbyNameReceived.RemoveListener(SetLobbyName);
-        }
     }
 }

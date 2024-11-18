@@ -17,7 +17,7 @@ namespace lv.network
             Instance = this;
         }
 
-        // Authenticates the client and returns the result as an AuthenticationStatus
+        // Authenticates the client and returns the result as a PacketType
         public PacketType AuthenticateClient(string username, IPEndPoint clientEndPoint, ref string sessionToken)
         {
             if (IsValidUser(username))
@@ -26,17 +26,17 @@ namespace lv.network
                 m_authenticatedSessions[clientEndPoint] = sessionToken;
 
                 Packet responsePacket = new Packet();
-                responsePacket.WriteByte((int)PacketType.auth_success);
+                responsePacket.WriteByte((byte)PacketType.auth_success);
                 responsePacket.WriteString(sessionToken);
-                NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
+                NetworkManager.Instance.m_packetQueue.Enqueue(new PacketData(responsePacket, clientEndPoint));
 
                 return PacketType.auth_success;
             }
             else
             {
                 Packet responsePacket = new Packet();
-                responsePacket.WriteByte((int)PacketType.auth_failure);
-                NetworkManager.Instance.SendPacket(responsePacket, clientEndPoint);
+                responsePacket.WriteByte((byte)PacketType.auth_failure);
+                NetworkManager.Instance.m_packetQueue.Enqueue(new PacketData(responsePacket, clientEndPoint));
 
                 return PacketType.auth_failure;
             }
