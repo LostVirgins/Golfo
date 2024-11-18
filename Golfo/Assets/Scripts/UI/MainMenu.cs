@@ -1,4 +1,6 @@
 using lv.network;
+using System.Collections.Generic;
+using System.Net;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -28,19 +30,10 @@ public class MainMenu : MonoBehaviour
     bool isHost = false;
     bool isChatting = false;
 
-    private void Start()
-    {
-        
-    }
+    private void Start() { }
 
     private void Update()
     {
-        //if (Conections.GetComponent<ClientTCP>().lobyName != lobyName)
-        //{
-        //    lobyName = Conections.GetComponent<ClientTCP>().lobyName;
-        //    LobyNameText.text = "Connected to - " + lobyName;
-        //}
-
         if (isChatting)
         {
             if (Input.GetKeyDown(KeyCode.Return))
@@ -95,28 +88,27 @@ public class MainMenu : MonoBehaviour
 
     public void StartGame()
     {
-        SceneManager.LoadScene(sceneName: "2_game_test");
+        Dictionary<IPEndPoint, Player> connectedPlayers = NetworkManager.Instance.m_connectedPlayers;
 
         Packet gameStart = new Packet();
         gameStart.WriteByte((byte)PacketType.game_start);
         gameStart.WriteString("hekbas_todo_use_token_:)");
+        gameStart.WriteByte((byte)connectedPlayers.Count);
+
+        foreach (var player in connectedPlayers)
+        {
+            gameStart.WriteString(player.Key.ToString());
+            gameStart.WriteString(player.Value.m_sessionToken);
+        }
 
         NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(gameStart, NetworkManager.Instance.m_serverEndPoint, true));
+
+        SceneManager.LoadScene(sceneName: "2_game_test");
     }
 
     public void ExitLoby()
     {
-        if (isHost)
-        {
-            //TODO Shut Down server
-        }
-        else
-        {
-            //if (tcp.isOn)
-            //    Conections.GetComponent<ClientTCP>().Disconnect();
-            //else
-            //    Conections.GetComponent<ClientUDP>().Disconnect();
-        }
+        //hekbas: shutdown server
 
         MainMenuSec.SetActive(true);
         LobyViewSec.SetActive(false);

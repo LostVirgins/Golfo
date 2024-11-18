@@ -8,7 +8,7 @@ namespace lv.network
     {
         public static AuthenticationManager Instance { get; private set; }
 
-        private Dictionary<IPEndPoint, string> m_authenticatedSessions = new Dictionary<IPEndPoint, string>();
+        public Dictionary<IPEndPoint, string> m_authenticatedSessions { get; private set; } = new Dictionary<IPEndPoint, string>();
         private HashSet<string> m_validUsers = new HashSet<string> { "hekbas", "itsNick02", "IITROSDASEII", "punto16", "chu3rk" };
 
 

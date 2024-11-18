@@ -19,7 +19,7 @@ namespace lv.network
         private int m_serverPort = 9050;
         public IPEndPoint m_serverEndPoint { get; private set; }
         private UdpClient m_udpClient;
-        private Dictionary<IPEndPoint, Player> m_connectedPlayers = new Dictionary<IPEndPoint, Player>();
+        public Dictionary<IPEndPoint, Player> m_connectedPlayers { get; private set; } = new Dictionary<IPEndPoint, Player>();
 
         public Queue<PacketData> m_sendQueue { get; private set; } = new Queue<PacketData>();
         public Queue<PacketData> m_receiveQueue { get; private set; } = new Queue<PacketData>();
@@ -153,7 +153,7 @@ namespace lv.network
             {
                 case PacketType.lobby_name:     LobbyName(packetData);      break;
                 case PacketType.chat_message:   ChatMessage(packetData);    break;
-                case PacketType.game_start:     GameStart();                break;
+                case PacketType.game_start:     GameStart(packetData);      break;
                 case PacketType.game_end:       GameEnd();                  break;
                 case PacketType.ball_strike:    BallStrike();               break;
                 case PacketType.player_turn:    PlayerTurn();               break;
@@ -241,8 +241,18 @@ namespace lv.network
             OnReceiveChatMessage.Invoke(packetData.m_packet.ReadString());
         }
 
-        private void GameStart()
+        private void GameStart(PacketData packetData)
         {
+            byte length = packetData.m_packet.ReadByte();
+
+            for (byte i = 0; i < length; i++)
+            {
+                IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
+                string sessionToken = packetData.m_packet.ReadString();
+                Player player = new Player(sessionToken);
+                m_connectedPlayers[ipEndPoint] = player;
+            }
+
             SceneManager.LoadScene(sceneName: "2_game_test");
         }
 
@@ -271,6 +281,19 @@ namespace lv.network
                 players.Add(player);
 
             return players;
+        }
+
+        // Helpers ----------------------------------------------
+        private IPEndPoint ParseIPEndPoint(string endPointString)
+        {
+            string[] parts = endPointString.Split(':');
+            if (parts.Length == 2 && IPAddress.TryParse(parts[0], out var ip))
+            {
+                if (int.TryParse(parts[1], out var port))
+                    return new IPEndPoint(ip, port);
+            }
+
+            throw new FormatException($"Invalid IPEndPoint string: {endPointString}");
         }
     }
 }
