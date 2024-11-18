@@ -44,12 +44,7 @@ public class MainMenu : MonoBehaviour
         if (isChatting)
         {
             if (Input.GetKeyDown(KeyCode.Return))
-            {
-                string message = $"{userName} - " + inputChatTxt.text;
-                inputChatTxt.text = "";
-
-                OnSendMessage(message);
-            }
+                OnSendMessage();
         }
     }
 
@@ -106,7 +101,7 @@ public class MainMenu : MonoBehaviour
         gameStart.WriteByte((byte)PacketType.game_start);
         gameStart.WriteString("hekbas_todo_use_token_:)");
 
-        NetworkManager.Instance.m_outQueue.Enqueue(new PacketData(gameStart, NetworkManager.Instance.m_serverEndPoint, true));
+        NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(gameStart, NetworkManager.Instance.m_serverEndPoint, true));
     }
 
     public void ExitLoby()
@@ -129,19 +124,22 @@ public class MainMenu : MonoBehaviour
         isChatting = false;
     }
 
-    public void OnSendMessage(string message)
+    public void OnSendMessage()
     {
-        InstantiateMessage(message);
+        if (string.IsNullOrEmpty(inputChatTxt.text)) return;
+
+        string message = $"{userName} - " + inputChatTxt.text;
+        inputChatTxt.text = "";
 
         Packet chatMessage = new Packet(); 
         chatMessage.WriteByte((byte)PacketType.chat_message);
         chatMessage.WriteString("hekbas_todo_use_token_:)");
         chatMessage.WriteString(message);
 
-        NetworkManager.Instance.m_outQueue.Enqueue(new PacketData(chatMessage, NetworkManager.Instance.m_serverEndPoint));
+        NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(chatMessage, NetworkManager.Instance.m_serverEndPoint));
     }
 
-    public void PrintReceivedMessage(string message)
+    public void DisplayMessage(string message)
     {
         InstantiateMessage(message);
     }
@@ -177,7 +175,7 @@ public class MainMenu : MonoBehaviour
         if (NetworkManager.Instance != null)
         {
             NetworkManager.Instance.OnReceiveLobbyName.AddListener(SetLobbyName);
-            NetworkManager.Instance.OnReceiveChatMessage.AddListener(PrintReceivedMessage);
+            NetworkManager.Instance.OnReceiveChatMessage.AddListener(DisplayMessage);
         }
     }
 
@@ -186,7 +184,7 @@ public class MainMenu : MonoBehaviour
         if (NetworkManager.Instance != null)
         {
             NetworkManager.Instance.OnReceiveLobbyName.RemoveListener(SetLobbyName);
-            NetworkManager.Instance.OnReceiveChatMessage.RemoveListener(PrintReceivedMessage);
+            NetworkManager.Instance.OnReceiveChatMessage.RemoveListener(DisplayMessage);
         }
     }
 }
