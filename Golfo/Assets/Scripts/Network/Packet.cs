@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using System.Net;
-using System.Numerics;
 using System.Text;
+using UnityEngine;
 
 namespace lv.network
 {
@@ -62,9 +62,9 @@ namespace lv.network
         public void WriteFloat(float value) => m_writer.Write(value);
         public void WriteVector3(Vector3 vec)
         {
-            WriteFloat(vec.X);
-            WriteFloat(vec.Y);
-            WriteFloat(vec.Z);
+            WriteFloat(vec.x);
+            WriteFloat(vec.y);
+            WriteFloat(vec.z);
         }
         public void WriteString(string text)
         {

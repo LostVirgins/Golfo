@@ -69,7 +69,12 @@ namespace lv.gameplay
             // Notify Server
             Packet packet = new Packet();
             packet.WriteByte((byte)PacketType.ball_strike);
-            packet.WriteString("");
+            packet.WriteString("hekbas_todo_use_token_:)");
+            packet.WriteVector3(direction);
+            packet.WriteFloat(strength);
+            packet.WriteFloat(shotPower);
+
+            NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(packet, NetworkManager.Instance.m_serverEndPoint));
         }
 
         private void DrawLine(Vector3 worldPoint)

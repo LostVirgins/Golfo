@@ -1,3 +1,4 @@
+using lv.gameplay;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -10,6 +11,7 @@ namespace lv.network
 {
     public class LobbyNameEvent : UnityEvent<string> { }
     public class ChatMessageEvent : UnityEvent<string> { }
+    public class BallStrikeEvent : UnityEvent<PacketData> { }
 
     public class NetworkManager : MonoBehaviour
     {
@@ -31,6 +33,7 @@ namespace lv.network
 
         public LobbyNameEvent OnReceiveLobbyName = new LobbyNameEvent();
         public ChatMessageEvent OnReceiveChatMessage = new ChatMessageEvent();
+        public BallStrikeEvent OnBallStrike = new BallStrikeEvent();
 
         private void Awake()
         {
@@ -155,7 +158,7 @@ namespace lv.network
                 case PacketType.chat_message:   ChatMessage(packetData);    break;
                 case PacketType.game_start:     GameStart(packetData);      break;
                 case PacketType.game_end:       GameEnd();                  break;
-                case PacketType.ball_strike:    BallStrike();               break;
+                case PacketType.ball_strike:    BallStrike(packetData);     break;
                 case PacketType.player_turn:    PlayerTurn();               break;
                 default: Debug.Log("Packet Type not found.");               break;
             }
@@ -261,9 +264,13 @@ namespace lv.network
 
         }
 
-        private void BallStrike()
+        private void BallStrike(PacketData packetData)
         {
+            if (isHost)
+                BroadcastPacket(packetData);
 
+            OnBallStrike.Invoke(packetData);
+            //GameManager.Instance.OnBallStrike(packetData);
         }
 
         private void PlayerTurn()
@@ -282,6 +289,7 @@ namespace lv.network
 
             return players;
         }
+
 
         // Helpers ----------------------------------------------
         private IPEndPoint ParseIPEndPoint(string endPointString)
