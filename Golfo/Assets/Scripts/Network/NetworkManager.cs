@@ -19,8 +19,10 @@ namespace lv.network
 
         private IPAddress m_serverIP = IPAddress.Parse("127.0.0.1");
         private int m_serverPort = 9050;
-        public IPEndPoint m_serverEndPoint { get; private set; }
-        private UdpClient m_udpClient;
+        public IPEndPoint m_hostEndPoint { get; private set; }
+
+        public IPEndPoint m_localEndPoint { get; private set; }
+        public UdpClient m_udpClient { get; private set; }
         public Dictionary<IPEndPoint, Player> m_connectedPlayers { get; private set; } = new Dictionary<IPEndPoint, Player>();
 
         public Queue<PacketData> m_sendQueue { get; private set; } = new Queue<PacketData>();
@@ -38,7 +40,7 @@ namespace lv.network
         private void Awake()
         {
             Instance = this;
-            m_serverEndPoint = null;
+            m_hostEndPoint = null;
             DontDestroyOnLoad(gameObject);
         }
 
@@ -70,13 +72,14 @@ namespace lv.network
             isHost = true;
             m_lobbyName = lobbyName;
 
-            m_serverEndPoint = new IPEndPoint(m_serverIP, m_serverPort);
+            m_hostEndPoint = new IPEndPoint(m_serverIP, m_serverPort);
+            m_localEndPoint = m_hostEndPoint;
 
             m_udpClient = new UdpClient(m_serverPort);
             m_udpClient.BeginReceive(OnReceiveData, null);
 
             Player newPlayer = new Player($"{System.Guid.NewGuid()}");
-            m_connectedPlayers[m_serverEndPoint] = newPlayer;
+            m_connectedPlayers[m_hostEndPoint] = newPlayer;
 
             Debug.Log("Server up and running. Waiting for new Players...");
         }
@@ -85,16 +88,16 @@ namespace lv.network
         {
             Debug.Log("Joining server...");
             isHost = false;
-            m_serverEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
-
+            m_hostEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
             m_udpClient = new UdpClient(0);
+
             m_udpClient.BeginReceive(OnReceiveData, null);
 
             Packet authReq = new Packet();
             authReq.WriteByte((byte)PacketType.connection_request);
             authReq.WriteString(username);
 
-            m_sendQueue.Enqueue(new PacketData(authReq, m_serverEndPoint));
+            m_sendQueue.Enqueue(new PacketData(authReq, m_hostEndPoint));
 
             Debug.Log("Authentication request sent to server.");
         }
@@ -172,7 +175,7 @@ namespace lv.network
 
         private void SendPacket(Packet packet, IPEndPoint endPoint = null)
         {
-            endPoint = endPoint ?? m_serverEndPoint;
+            endPoint = endPoint ?? m_hostEndPoint;
             byte[] data = packet.GetData();
             m_udpClient.Send(data, data.Length, endPoint);
         }
@@ -181,7 +184,7 @@ namespace lv.network
         {
             foreach (var client in m_connectedPlayers.Keys)
             {
-                if (client.Equals(m_serverEndPoint)) continue;
+                if (client.Equals(m_hostEndPoint)) continue;
                 SendPacket(packetData.m_packet, client);
             }
         }
@@ -210,7 +213,7 @@ namespace lv.network
         {
             string username = packet.ReadString();
             string sessionToken = "";
-            PacketType status = AuthenticationManager.Instance.AuthenticateClient(username, m_serverEndPoint, ref sessionToken);
+            PacketType status = AuthenticationManager.Instance.AuthenticateClient(username, m_hostEndPoint, ref sessionToken);
 
             if (status == PacketType.auth_success)
             {
@@ -219,6 +222,7 @@ namespace lv.network
                 Packet lobbyNamePacket = new Packet();
                 lobbyNamePacket.WriteByte((byte)PacketType.lobby_name);
                 lobbyNamePacket.WriteString(sessionToken);
+                lobbyNamePacket.WriteString(senderEndPoint.ToString());
                 lobbyNamePacket.WriteString(m_lobbyName);
                 m_sendQueue.Enqueue(new PacketData(lobbyNamePacket, senderEndPoint));
             }
@@ -233,7 +237,10 @@ namespace lv.network
             if (isHost)
                 SendPacket(packetData);
             else
+            {
+                m_localEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
                 OnReceiveLobbyName.Invoke(packetData.m_packet.ReadString());
+            }
         }
         
         private void ChatMessage(PacketData packetData)

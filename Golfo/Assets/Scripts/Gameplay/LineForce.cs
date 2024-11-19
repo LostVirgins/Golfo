@@ -74,7 +74,7 @@ namespace lv.gameplay
             packet.WriteFloat(strength);
             packet.WriteFloat(shotPower);
 
-            NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(packet, NetworkManager.Instance.m_serverEndPoint));
+            NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(packet, NetworkManager.Instance.m_hostEndPoint));
         }
 
         private void DrawLine(Vector3 worldPoint)
@@ -105,7 +105,7 @@ namespace lv.gameplay
             if (plane.Raycast(ray, out rayDistance))
             {
                 // Debug Shot Ray
-                //Debug.DrawRay(rigidbody.position, ray.GetPoint(rayDistance), Color.yellow);
+                Debug.DrawRay(rigidbody.position, ray.GetPoint(rayDistance), Color.yellow);
 
                 return ray.GetPoint(rayDistance);
             }

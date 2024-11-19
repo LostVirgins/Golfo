@@ -1,7 +1,11 @@
+using Cinemachine;
 using lv.network;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using UnityEngine;
 
 namespace lv.gameplay
@@ -10,12 +14,38 @@ namespace lv.gameplay
     {
         public static GameManager Instance { get; private set; }
 
+        [SerializeField] private GameObject camera;
         [SerializeField] private GameObject golfBallPrefab;
+        [SerializeField] private GameObject spawner;
+
+        private GameObject player;
         public Dictionary<IPEndPoint, Player> m_players = NetworkManager.Instance.m_connectedPlayers;
 
         private void Awake()
         {
             InstantiatePlayers();
+            player = m_players[NetworkManager.Instance.m_localEndPoint].m_golfBall;
+            camera.GetComponent<CinemachineVirtualCamera>().m_LookAt = player.transform;
+
+            int index = 0;
+            foreach (var player in m_players.Values)
+            {
+                Color ballColor = Color.white;
+                switch (index)
+                {
+                    case 0: ballColor = Color.blue;     break;
+                    case 1: ballColor = Color.red;      break;
+                    case 2: ballColor = Color.yellow;   break;
+                    case 3: ballColor = Color.green;    break;
+                    case 4: ballColor = Color.magenta;  break;
+                    case 5: ballColor = Color.black;    break;
+                    case 6: ballColor = Color.cyan;     break;
+                    case 7: ballColor = Color.white;    break;
+                    case 8: ballColor = Color.grey;     break;
+                }
+                player.m_golfBall.GetComponent<Renderer>().material.color = ballColor;
+                index++;
+            }
         }
 
         void Start()
@@ -33,7 +63,7 @@ namespace lv.gameplay
         void InstantiatePlayers()
         {
             foreach (var player in m_players.Values)
-                player.m_golfBall = Instantiate(golfBallPrefab, transform.position, Quaternion.identity);
+                player.m_golfBall = Instantiate(golfBallPrefab, spawner.transform.position, Quaternion.identity);
         }
 
         public void BallStrike(PacketData packetData)
