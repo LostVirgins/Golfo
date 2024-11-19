@@ -18,14 +18,19 @@ namespace lv.gameplay
         [SerializeField] private GameObject golfBallPrefab;
         [SerializeField] private GameObject spawner;
 
-        private GameObject player;
+        public GameObject m_player;
         public Dictionary<IPEndPoint, Player> m_players = NetworkManager.Instance.m_connectedPlayers;
 
         private void Awake()
         {
+            Instance = this;
+        }
+
+        void Start()
+        {
             InstantiatePlayers();
-            player = m_players[NetworkManager.Instance.m_localEndPoint].m_golfBall;
-            camera.GetComponent<CinemachineVirtualCamera>().m_LookAt = player.transform;
+            m_player = m_players[NetworkManager.Instance.m_localEndPoint].m_golfBall;
+            camera.GetComponent<CinemachineVirtualCamera>().m_LookAt = m_player.transform;
 
             int index = 0;
             foreach (var player in m_players.Values)
@@ -42,16 +47,11 @@ namespace lv.gameplay
                     case 6: ballColor = Color.cyan;     break;
                     case 7: ballColor = Color.white;    break;
                     case 8: ballColor = Color.grey;     break;
-                    default:ballColor = Color.white;    break;
+                    default: ballColor = Color.white;   break;
                 }
                 player.m_golfBall.GetComponent<Renderer>().material.color = ballColor;
                 index++;
             }
-        }
-
-        void Start()
-        {
-
         }
 
         void Update()
@@ -67,7 +67,7 @@ namespace lv.gameplay
                 player.m_golfBall = Instantiate(golfBallPrefab, spawner.transform.position, Quaternion.identity);
         }
 
-        public void BallStrike(PacketData packetData)
+        public void OnBallStrike(PacketData packetData)
         {
             IPEndPoint ipEndPoint = NetworkManager.Instance.ParseIPEndPoint(packetData.m_packet.ReadString());
 
@@ -77,22 +77,6 @@ namespace lv.gameplay
                     -packetData.m_packet.ReadVector3() *
                     packetData.m_packet.ReadFloat() *
                     packetData.m_packet.ReadFloat());
-            }
-        }
-
-        private void OnEnable()
-        {
-            if (NetworkManager.Instance != null)
-            {
-                NetworkManager.Instance.OnBallStrike.AddListener(BallStrike);
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (NetworkManager.Instance != null)
-            {
-                NetworkManager.Instance.OnBallStrike.RemoveListener(BallStrike);
             }
         }
     }

@@ -11,7 +11,6 @@ namespace lv.network
 {
     public class LobbyNameEvent : UnityEvent<string> { }
     public class ChatMessageEvent : UnityEvent<string> { }
-    public class BallStrikeEvent : UnityEvent<PacketData> { }
 
     public class NetworkManager : MonoBehaviour
     {
@@ -35,7 +34,6 @@ namespace lv.network
 
         public LobbyNameEvent OnReceiveLobbyName = new LobbyNameEvent();
         public ChatMessageEvent OnReceiveChatMessage = new ChatMessageEvent();
-        public BallStrikeEvent OnBallStrike = new BallStrikeEvent();
 
         private void Awake()
         {
@@ -276,7 +274,7 @@ namespace lv.network
             if (isHost)
                 BroadcastPacket(packetData);
 
-            OnBallStrike.Invoke(packetData);
+            GameManager.Instance.OnBallStrike(packetData);
         }
 
         private void PlayerTurn()

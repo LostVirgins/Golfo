@@ -96,6 +96,9 @@ namespace lv.gameplay
 
         private Vector3? CastMouseClickRay()
         {
+            if (GameManager.Instance.m_player.GetComponent<Rigidbody>() != rigidbody)
+                return null;
+
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             var plane = new Plane(Vector3.up, rigidbody.position);
 
@@ -106,7 +109,7 @@ namespace lv.gameplay
             if (plane.Raycast(ray, out rayDistance))
             {
                 // Debug Shot Ray
-                Debug.DrawRay(rigidbody.position, ray.GetPoint(rayDistance), Color.yellow);
+                //Debug.DrawRay(rigidbody.position, ray.GetPoint(rayDistance), Color.yellow);
 
                 return ray.GetPoint(rayDistance);
             }
