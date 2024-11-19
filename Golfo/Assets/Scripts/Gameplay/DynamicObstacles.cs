@@ -46,7 +46,7 @@ namespace lv.gameplay
             {
                 m_changeDir = true;
                 m_timeToDestiny = 0f;
-                Debug.Log("changed_1");
+                //Debug.Log("changed_1");
             }
 
             if (m_timeToStart <= 1f && m_changeDir)
@@ -60,7 +60,7 @@ namespace lv.gameplay
             {
                 m_changeDir = false;
                 m_timeToStart = 0f;
-                Debug.Log("changed_2");
+                //Debug.Log("changed_2");
             }
         }
     }
