@@ -70,6 +70,7 @@ namespace lv.gameplay
             Packet packet = new Packet();
             packet.WriteByte((byte)PacketType.ball_strike);
             packet.WriteString("hekbas_todo_use_token_:)");
+            packet.WriteString(NetworkManager.Instance.m_localEndPoint.ToString());
             packet.WriteVector3(direction);
             packet.WriteFloat(strength);
             packet.WriteFloat(shotPower);
@@ -113,5 +114,4 @@ namespace lv.gameplay
             return null;
         }
     }
-
 }

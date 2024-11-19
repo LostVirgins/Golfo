@@ -42,6 +42,7 @@ namespace lv.gameplay
                     case 6: ballColor = Color.cyan;     break;
                     case 7: ballColor = Color.white;    break;
                     case 8: ballColor = Color.grey;     break;
+                    default:ballColor = Color.white;    break;
                 }
                 player.m_golfBall.GetComponent<Renderer>().material.color = ballColor;
                 index++;
@@ -68,10 +69,12 @@ namespace lv.gameplay
 
         public void BallStrike(PacketData packetData)
         {
-            if (m_players.ContainsKey(packetData.m_remoteEP))
+            IPEndPoint ipEndPoint = NetworkManager.Instance.ParseIPEndPoint(packetData.m_packet.ReadString());
+
+            if (m_players.ContainsKey(ipEndPoint))
             {
-                m_players[packetData.m_remoteEP].m_golfBall.GetComponent<Rigidbody>().AddForce(
-                    - packetData.m_packet.ReadVector3() *
+                m_players[ipEndPoint].m_golfBall.GetComponent<Rigidbody>().AddForce(
+                    -packetData.m_packet.ReadVector3() *
                     packetData.m_packet.ReadFloat() *
                     packetData.m_packet.ReadFloat());
             }

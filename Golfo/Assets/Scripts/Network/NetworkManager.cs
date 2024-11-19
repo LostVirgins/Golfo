@@ -277,7 +277,6 @@ namespace lv.network
                 BroadcastPacket(packetData);
 
             OnBallStrike.Invoke(packetData);
-            //GameManager.Instance.OnBallStrike(packetData);
         }
 
         private void PlayerTurn()
@@ -299,7 +298,7 @@ namespace lv.network
 
 
         // Helpers ----------------------------------------------
-        private IPEndPoint ParseIPEndPoint(string endPointString)
+        public IPEndPoint ParseIPEndPoint(string endPointString)
         {
             string[] parts = endPointString.Split(':');
             if (parts.Length == 2 && IPAddress.TryParse(parts[0], out var ip))
