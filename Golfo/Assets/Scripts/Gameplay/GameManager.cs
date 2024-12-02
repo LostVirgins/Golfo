@@ -14,9 +14,9 @@ namespace lv.gameplay
     {
         public static GameManager Instance { get; private set; }
 
-        [SerializeField] private GameObject camera;
-        [SerializeField] private GameObject golfBallPrefab;
-        [SerializeField] private GameObject spawner;
+        [SerializeField] private GameObject m_camera;
+        [SerializeField] private GameObject m_golfBallPrefab;
+        [SerializeField] private GameObject m_spawner;
 
         public GameObject m_player;
         public Dictionary<IPEndPoint, Player> m_players = NetworkManager.Instance.m_connectedPlayers;
@@ -30,7 +30,7 @@ namespace lv.gameplay
         {
             InstantiatePlayers();
             m_player = m_players[NetworkManager.Instance.m_localEndPoint].m_golfBall;
-            camera.GetComponent<CinemachineVirtualCamera>().m_LookAt = m_player.transform;
+            m_camera.GetComponent<CinemachineVirtualCamera>().m_LookAt = m_player.transform;
 
             int index = 0;
             foreach (var player in m_players.Values)
@@ -64,7 +64,10 @@ namespace lv.gameplay
         void InstantiatePlayers()
         {
             foreach (var player in m_players.Values)
-                player.m_golfBall = Instantiate(golfBallPrefab, spawner.transform.position, Quaternion.identity);
+            {
+                player.m_golfBall = Instantiate(m_golfBallPrefab, m_spawner.transform.position, Quaternion.identity);
+                //player.m_golfBall.layer = LayerMask.NameToLayer("GolfBall");
+            }
         }
 
         public void OnBallStrike(PacketData packetData)
