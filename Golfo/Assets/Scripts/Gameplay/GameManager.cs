@@ -38,17 +38,18 @@ namespace lv.gameplay
                 Color ballColor = Color.white;
                 switch (index)
                 {
-                    case 0: ballColor = Color.blue;     break;
-                    case 1: ballColor = Color.red;      break;
-                    case 2: ballColor = Color.yellow;   break;
-                    case 3: ballColor = Color.green;    break;
-                    case 4: ballColor = Color.magenta;  break;
-                    case 5: ballColor = Color.black;    break;
-                    case 6: ballColor = Color.cyan;     break;
-                    case 7: ballColor = Color.white;    break;
-                    case 8: ballColor = Color.grey;     break;
-                    default: ballColor = Color.white;   break;
+                    case 0: ballColor = new Color(1.0f, 0.0f, 0.0f, 0.4f);  break;  // Red
+                    case 1: ballColor = new Color(0.0f, 1.0f, 0.0f, 0.4f);  break;  // Green
+                    case 2: ballColor = new Color(0.0f, 0.0f, 1.0f, 0.4f);  break;  // Blue
+                    case 3: ballColor = new Color(1.0f, 1.0f, 0.0f, 0.4f);  break;  // Yellow
+                    case 4: ballColor = new Color(1.0f, 0.0f, 1.0f, 0.4f);  break;  // Magenta
+                    case 5: ballColor = new Color(0.0f, 1.0f, 1.0f, 0.4f);  break;  // Cyan
+                    case 6: ballColor = new Color(1.0f, 0.5f, 0.0f, 0.4f);  break;  // Orange
+                    case 7: ballColor = new Color(0.5f, 0.0f, 0.5f, 0.4f);  break;  // Purple
+                    default:ballColor = new Color(0.5f, 0.5f, 0.5f, 0.4f);  break;  // Gray
                 }
+
+                if (player.m_golfBall == m_player) ballColor.a = 1.0f;
                 player.m_golfBall.GetComponent<Renderer>().material.color = ballColor;
                 index++;
             }
