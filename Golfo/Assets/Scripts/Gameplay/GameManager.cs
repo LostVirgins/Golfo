@@ -49,7 +49,12 @@ namespace lv.gameplay
                     default:ballColor = new Color(0.5f, 0.5f, 0.5f, 0.4f);  break;  // Gray
                 }
 
-                if (player.m_golfBall == m_player) ballColor.a = 1.0f;
+                if (player.m_golfBall == m_player)
+                {
+                    player.m_golfBall.layer = LayerMask.NameToLayer("PlayerBall");
+                    ballColor.a = 1.0f;
+                }
+
                 player.m_golfBall.GetComponent<Renderer>().material.color = ballColor;
                 index++;
             }
@@ -65,10 +70,7 @@ namespace lv.gameplay
         void InstantiatePlayers()
         {
             foreach (var player in m_players.Values)
-            {
                 player.m_golfBall = Instantiate(m_golfBallPrefab, m_spawner.transform.position, Quaternion.identity);
-                //player.m_golfBall.layer = LayerMask.NameToLayer("GolfBall");
-            }
         }
 
         public void OnBallStrike(PacketData packetData)

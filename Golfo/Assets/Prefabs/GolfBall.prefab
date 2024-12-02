@@ -151,7 +151,7 @@ GameObject:
   - component: {fileID: 8464029916628817852}
   - component: {fileID: 853864565688744547}
   - component: {fileID: 3145866685752636075}
-  m_Layer: 3
+  m_Layer: 2
   m_Name: GolfBall
   m_TagString: Player
   m_Icon: {fileID: 0}
