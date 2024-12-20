@@ -1,4 +1,3 @@
-using Cinemachine;
 using lv.network;
 using System;
 using System.Collections;
@@ -30,10 +29,9 @@ namespace lv.gameplay
         {
             InstantiatePlayers();
             m_player = m_players[NetworkManager.Instance.m_localEndPoint].m_golfBall;
-            m_camera.GetComponent<CinemachineVirtualCamera>().m_LookAt = m_player.transform;
-            // added component for camera to follow player
+
             m_camera.AddComponent<CameraFollow>();
-            m_camera.GetComponent<CameraFollow>().target = m_player.transform;
+            m_camera.GetComponent<CameraFollow>().m_target = m_player.transform;
 
             int index = 0;
             foreach (var player in m_players.Values)
