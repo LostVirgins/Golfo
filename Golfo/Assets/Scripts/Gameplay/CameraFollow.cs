@@ -26,13 +26,14 @@ namespace lv.gameplay
         private float x = 0f;
         private float y = 0f;
         private Vector3 position;
-        private Quaternion rotation;
+        private Quaternion rotation = new(0.063f, 0.90f, -0.39f, 0.14f);
         float prevDistance;
 
 
         void Start()
         {
             //GetComponent<CinemachineVirtualCamera>().m_LookAt = m_target.transform;
+            transform.rotation = rotation;
             m_offset = transform.position - m_target.position;
             var angles = transform.eulerAngles;
             x = angles.y;
