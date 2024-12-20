@@ -15,16 +15,16 @@ namespace lv.network
         invalid_session,
         expired_session,
 
-        // host to client
         lobby_name,
         game_start,
         game_end,
 
         player_position,
         player_turn,
+        dynamicObstacle_position,
+
         chat_message,
 
-        // client to host
         ball_strike,
 
         item_get,
@@ -57,6 +57,7 @@ namespace lv.network
             m_memoryStream.Position = pos;
         }
 
+        public void WriteBool(bool value) => m_writer.Write(value);
         public void WriteByte(byte value) => m_writer.Write(value);
         public void WriteInt(int value) => m_writer.Write(value);
         public void WriteFloat(float value) => m_writer.Write(value);
@@ -72,6 +73,7 @@ namespace lv.network
             m_writer.Write(Encoding.UTF8.GetBytes(text));
         }
 
+        public void ReadBool() => m_reader.ReadBoolean();
         public byte ReadByte() => m_reader.ReadByte();
         public int ReadInt() => m_reader.ReadInt32();
         public float ReadFloat() => m_reader.ReadSingle();

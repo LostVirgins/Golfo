@@ -74,7 +74,7 @@ namespace lv.gameplay
             packet.WriteFloat(strength);
             packet.WriteFloat(shotPower);
 
-            NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(packet, NetworkManager.Instance.m_hostEndPoint));
+            NetworkManager.Instance.EnqueueSend(new PacketData(packet, NetworkManager.Instance.m_hostEndPoint));
         }
 
         private void DrawLine(Vector3 worldPoint)

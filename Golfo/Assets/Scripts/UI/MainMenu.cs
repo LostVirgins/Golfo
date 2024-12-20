@@ -101,7 +101,7 @@ public class MainMenu : MonoBehaviour
             gameStart.WriteString(player.Value.m_sessionToken);
         }
 
-        NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(gameStart, NetworkManager.Instance.m_hostEndPoint, true));
+        NetworkManager.Instance.EnqueueSend(new PacketData(gameStart, NetworkManager.Instance.m_hostEndPoint, true));
 
         SceneManager.LoadScene(sceneName: "2_game_test");
     }
@@ -128,7 +128,7 @@ public class MainMenu : MonoBehaviour
         chatMessage.WriteString("hekbas_todo_use_token_:)");
         chatMessage.WriteString(message);
 
-        NetworkManager.Instance.m_sendQueue.Enqueue(new PacketData(chatMessage, NetworkManager.Instance.m_hostEndPoint));
+        NetworkManager.Instance.EnqueueSend(new PacketData(chatMessage, NetworkManager.Instance.m_hostEndPoint));
     }
 
     public void DisplayMessage(string message)

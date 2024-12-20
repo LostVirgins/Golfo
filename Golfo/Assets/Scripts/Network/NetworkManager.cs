@@ -24,8 +24,8 @@ namespace lv.network
         public UdpClient m_udpClient { get; private set; }
         public Dictionary<IPEndPoint, Player> m_connectedPlayers { get; private set; } = new Dictionary<IPEndPoint, Player>();
 
-        public Queue<PacketData> m_sendQueue { get; private set; } = new Queue<PacketData>();
-        public Queue<PacketData> m_receiveQueue { get; private set; } = new Queue<PacketData>();
+        private Queue<PacketData> m_sendQueue = new Queue<PacketData>();
+        private Queue<PacketData> m_receiveQueue = new Queue<PacketData>();
         private float m_sendInterval = 0.05f;
         private float m_lastSendTime = 0f;
 
@@ -62,42 +62,6 @@ namespace lv.network
                 if (m_receiveQueue.TryDequeue(out PacketData packetData))
                     ProcessPacket(packetData);
             }
-        }
-
-        public void StartHost(string lobbyName)
-        {
-            Debug.Log("Hosting game...");
-            isHost = true;
-            m_lobbyName = lobbyName;
-
-            m_hostEndPoint = new IPEndPoint(m_serverIP, m_serverPort);
-            m_localEndPoint = m_hostEndPoint;
-
-            m_udpClient = new UdpClient(m_serverPort);
-            m_udpClient.BeginReceive(OnReceiveData, null);
-
-            Player newPlayer = new Player($"{System.Guid.NewGuid()}");
-            m_connectedPlayers[m_hostEndPoint] = newPlayer;
-
-            Debug.Log("Server up and running. Waiting for new Players...");
-        }
-
-        public void JoinServer(string ipAddress, string username)
-        {
-            Debug.Log("Joining server...");
-            isHost = false;
-            m_hostEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
-            m_udpClient = new UdpClient(0);
-
-            m_udpClient.BeginReceive(OnReceiveData, null);
-
-            Packet authReq = new Packet();
-            authReq.WriteByte((byte)PacketType.connection_request);
-            authReq.WriteString(username);
-
-            m_sendQueue.Enqueue(new PacketData(authReq, m_hostEndPoint));
-
-            Debug.Log("Authentication request sent to server.");
         }
 
         private void OnReceiveData(IAsyncResult result)
@@ -206,7 +170,7 @@ namespace lv.network
         }
 
 
-        // Packet Processing -------------------------------
+        // Packet Processing ----------------------------------------------------------
         private void ConnectionRequest(Packet packet, IPEndPoint senderEndPoint)
         {
             string username = packet.ReadString();
@@ -283,7 +247,57 @@ namespace lv.network
         }
 
 
-        // Get / Set --------------------------------------------
+        // Public Methods ---------------------------------------------------------------
+
+        /// <summary>
+        /// Starts hosting a game, initializes the server, and sets up the host's networking configuration.
+        /// </summary>
+        /// <param name="lobbyName">The name of the lobby to be hosted.</param>
+        public void StartHost(string lobbyName)
+        {
+            Debug.Log("Hosting game...");
+            isHost = true;
+            m_lobbyName = lobbyName;
+
+            m_hostEndPoint = new IPEndPoint(m_serverIP, m_serverPort);
+            m_localEndPoint = m_hostEndPoint;
+
+            m_udpClient = new UdpClient(m_serverPort);
+            m_udpClient.BeginReceive(OnReceiveData, null);
+
+            Player newPlayer = new Player($"{System.Guid.NewGuid()}");
+            m_connectedPlayers[m_hostEndPoint] = newPlayer;
+
+            Debug.Log("Server up and running. Waiting for new Players...");
+        }
+
+        /// <summary>
+        /// Joins an existing server as a client and sends an authentication request.
+        /// </summary>
+        /// <param name="ipAddress">The IP address of the server to connect to.</param>
+        /// <param name="username">The username to identify the player joining the server.</param>
+        public void JoinServer(string ipAddress, string username)
+        {
+            Debug.Log("Joining server...");
+            isHost = false;
+            m_hostEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), m_serverPort);
+            m_udpClient = new UdpClient(0);
+
+            m_udpClient.BeginReceive(OnReceiveData, null);
+
+            Packet authReq = new Packet();
+            authReq.WriteByte((byte)PacketType.connection_request);
+            authReq.WriteString(username);
+
+            m_sendQueue.Enqueue(new PacketData(authReq, m_hostEndPoint));
+
+            Debug.Log("Authentication request sent to server.");
+        }
+
+        /// <summary>
+        /// Retrieves the list of players currently connected to the server.
+        /// </summary>
+        /// <returns>A list of Player objects representing connected players.</returns>
         public List<Player> GetConnectedPlayers()
         {
             List<Player> players = new List<Player>();
@@ -294,8 +308,36 @@ namespace lv.network
             return players;
         }
 
+        /// <summary>
+        /// Adds a packet to the send queue.
+        /// </summary>
+        /// <param name="packet">The packet to add to the send queue.</param>
+        public void EnqueueSend(PacketData packet)
+        {
+            lock (m_sendQueue)
+            {
+                m_sendQueue.Enqueue(packet);
+            }
+        }
 
-        // Helpers ----------------------------------------------
+        /// <summary>
+        /// Adds a packet to the receive queue.
+        /// </summary>
+        /// <param name="packet">The packet to add to the receive queue.</param>
+        public void EnqueueReceive(PacketData packet)
+        {
+            lock (m_receiveQueue)
+            {
+                m_receiveQueue.Enqueue(packet);
+            }
+        }
+
+        /// <summary>
+        /// Parses a string into an IPEndPoint object.
+        /// </summary>
+        /// <param name="endPointString">The string representation of the IPEndPoint (e.g., "127.0.0.1:12345").</param>
+        /// <returns>The parsed IPEndPoint object.</returns>
+        /// <exception cref="FormatException">Thrown if the input string is not in the correct format.</exception>
         public IPEndPoint ParseIPEndPoint(string endPointString)
         {
             string[] parts = endPointString.Split(':');
