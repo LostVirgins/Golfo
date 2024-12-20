@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using Cinemachine;
 using UnityEngine;
-//using UnityEngine.UIElements;
 
 namespace lv.gameplay
 {
@@ -17,8 +16,8 @@ namespace lv.gameplay
         [SerializeField] private float m_minDistance = 8f;
         [SerializeField] private float m_maxDistance = 45f;
 
-        [SerializeField] private float m_xSpeed = 220f;
-        [SerializeField] private float m_ySpeed = 120f;
+        [SerializeField] private float m_xSpeed = 100f;
+        [SerializeField] private float m_ySpeed = 70f;
 
         [SerializeField] private float m_yMinLimit = 15f;
         [SerializeField] private float m_yMaxLimit = 85f;
@@ -32,7 +31,9 @@ namespace lv.gameplay
 
         void Start()
         {
+            //hekbas: comment next line to turn off camera easings
             //GetComponent<CinemachineVirtualCamera>().m_LookAt = m_target.transform;
+
             m_offset = transform.position - m_target.position;
             var angles = transform.eulerAngles;
             x = angles.y;

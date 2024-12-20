@@ -34,9 +34,9 @@ namespace lv.network
 
     public class Packet
     {
-        private MemoryStream m_memoryStream;
-        private BinaryReader m_reader;
-        private BinaryWriter m_writer;
+        public MemoryStream m_memoryStream;
+        public BinaryReader m_reader;
+        public BinaryWriter m_writer;
 
         public Packet()
         {

@@ -22,12 +22,12 @@ namespace lv.network
 
         public IPEndPoint m_localEndPoint { get; private set; }
         public UdpClient m_udpClient { get; private set; }
-        public Dictionary<IPEndPoint, Player> m_connectedPlayers { get; private set; } = new Dictionary<IPEndPoint, Player>();
+        public Dictionary<IPEndPoint, Player> m_players { get; private set; } = new Dictionary<IPEndPoint, Player>();
 
         private Queue<PacketData> m_sendQueue = new Queue<PacketData>();
         private Queue<PacketData> m_receiveQueue = new Queue<PacketData>();
-        private float m_sendInterval = 0.05f;
-        private float m_lastSendTime = 0f;
+        private float m_tickRate = 0.10f; // 100ms - 10 ticks/s
+        private float m_lastTickTime = 0f;
 
         public bool isHost;
         public string m_lobbyName;
@@ -46,6 +46,9 @@ namespace lv.network
 
         public void Update()
         {
+            if (GameManager.Instance != null)
+                PlayersInfo();
+
             while (m_sendQueue.Count != 0)
             {
                 if (m_sendQueue.TryDequeue(out PacketData packetData))
@@ -119,13 +122,14 @@ namespace lv.network
 
             switch (packetType)
             {
-                case PacketType.lobby_name:     LobbyName(packetData);      break;
-                case PacketType.chat_message:   ChatMessage(packetData);    break;
-                case PacketType.game_start:     GameStart(packetData);      break;
-                case PacketType.game_end:       GameEnd();                  break;
-                case PacketType.ball_strike:    BallStrike(packetData);     break;
-                case PacketType.player_turn:    PlayerTurn();               break;
-                default: Debug.Log("Packet Type not found.");               break;
+                case PacketType.lobby_name:         LobbyName(packetData);          break;
+                case PacketType.chat_message:       ChatMessage(packetData);        break;
+                case PacketType.game_start:         GameStart(packetData);          break;
+                case PacketType.game_end:           GameEnd();                      break;
+                case PacketType.ball_strike:        BallStrike(packetData);         break;
+                case PacketType.player_position:    PlayerPosition(packetData);     break;
+                case PacketType.player_turn:        PlayerTurn();                   break;
+                default: Debug.Log("Packet Type not found.");                       break;
             }
         }
 
@@ -144,7 +148,7 @@ namespace lv.network
 
         private void BroadcastPacket(PacketData packetData)
         {
-            foreach (var client in m_connectedPlayers.Keys)
+            foreach (var client in m_players.Keys)
             {
                 if (client.Equals(m_hostEndPoint)) continue;
                 SendPacket(packetData.m_packet, client);
@@ -154,14 +158,51 @@ namespace lv.network
         private void BroadcastPacket(Packet packet)
         {
             //hekbas: this will also resend to origin!
-            foreach (var client in m_connectedPlayers.Keys)
+            foreach (var client in m_players.Keys)
                 SendPacket(packet, client);
         }
 
         private void AddPlayer(string sessionToken, IPEndPoint senderEndPoint)
         {
-            m_connectedPlayers[senderEndPoint] = new Player(sessionToken);
+            m_players[senderEndPoint] = new Player(sessionToken);
             Debug.Log($"New Player {senderEndPoint} authenticated with session {sessionToken}");
+        }
+
+        private void PlayersInfo()
+        {
+            m_lastTickTime += Time.deltaTime;
+            if (isHost)
+            {
+                if (m_lastTickTime >= m_tickRate)
+                {
+                    m_lastTickTime = 0;
+
+                    Packet playersPos = new Packet();
+                    playersPos.WriteByte((byte)PacketType.player_position);
+                    playersPos.WriteInt(m_players.Count);
+
+                    foreach (var player in m_players)
+                    {
+                        playersPos.WriteString(player.Key.ToString());
+                        playersPos.WriteVector3(player.Value.m_golfBall.transform.position);
+                    }
+
+                    EnqueueSend(new PacketData(playersPos, m_hostEndPoint, true));
+                }
+            }
+            else
+            {
+                if (m_lastTickTime >= m_tickRate)
+                {
+                    m_lastTickTime = 0;
+
+                    Packet playerPos = new Packet();
+                    playerPos.WriteByte((byte)PacketType.player_position);
+                    playerPos.WriteString(m_localEndPoint.ToString());
+                    playerPos.WriteVector3(GameManager.Instance.m_player.transform.position);
+                    EnqueueSend(new PacketData(playerPos, m_hostEndPoint, false));
+                }
+            }
         }
 
         private void OnApplicationQuit()
@@ -222,7 +263,7 @@ namespace lv.network
                 IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
                 string sessionToken = packetData.m_packet.ReadString();
                 Player player = new Player(sessionToken);
-                m_connectedPlayers[ipEndPoint] = player;
+                m_players[ipEndPoint] = player;
             }
 
             SceneManager.LoadScene(sceneName: "2_game_test");
@@ -239,6 +280,21 @@ namespace lv.network
                 BroadcastPacket(packetData);
 
             GameManager.Instance.OnBallStrike(packetData);
+        }
+
+        private void PlayerPosition(PacketData packetData)
+        {
+            if (isHost)
+            {
+                IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
+
+                if (m_players.ContainsKey(ipEndPoint))
+                    m_players[ipEndPoint].m_golfBall.transform.position = packetData.m_packet.ReadVector3();
+            }
+            else
+            {
+                GameManager.Instance.OnNetworkPlayerPosition(packetData);
+            }
         }
 
         private void PlayerTurn()
@@ -266,7 +322,7 @@ namespace lv.network
             m_udpClient.BeginReceive(OnReceiveData, null);
 
             Player newPlayer = new Player($"{System.Guid.NewGuid()}");
-            m_connectedPlayers[m_hostEndPoint] = newPlayer;
+            m_players[m_hostEndPoint] = newPlayer;
 
             Debug.Log("Server up and running. Waiting for new Players...");
         }
@@ -302,7 +358,7 @@ namespace lv.network
         {
             List<Player> players = new List<Player>();
 
-            foreach (var player in m_connectedPlayers.Values)
+            foreach (var player in m_players.Values)
                 players.Add(player);
 
             return players;

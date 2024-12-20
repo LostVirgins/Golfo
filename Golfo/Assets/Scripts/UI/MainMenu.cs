@@ -88,7 +88,7 @@ public class MainMenu : MonoBehaviour
 
     public void StartGame()
     {
-        Dictionary<IPEndPoint, Player> connectedPlayers = NetworkManager.Instance.m_connectedPlayers;
+        Dictionary<IPEndPoint, Player> connectedPlayers = NetworkManager.Instance.m_players;
 
         Packet gameStart = new Packet();
         gameStart.WriteByte((byte)PacketType.game_start);
