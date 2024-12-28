@@ -118,7 +118,7 @@ namespace lv.network
 
         private void ProcessGamePacket(PacketType packetType, PacketData packetData)
         {
-            Debug.Log("Processing game packet...");
+            //Debug.Log("Processing game packet...");
 
             switch (packetType)
             {
@@ -171,14 +171,16 @@ namespace lv.network
         private void PlayersInfo()
         {
             m_lastTickTime += Time.deltaTime;
-            if (isHost)
-            {
-                if (m_lastTickTime >= m_tickRate)
-                {
-                    m_lastTickTime = 0;
 
+            if (m_lastTickTime >= m_tickRate)
+            {
+                m_lastTickTime = 0;
+
+                if (isHost)
+                {
                     Packet playersPos = new Packet();
                     playersPos.WriteByte((byte)PacketType.player_position);
+                    playersPos.WriteString("hekbas_todo_use_token_:)");
                     playersPos.WriteInt(m_players.Count);
 
                     foreach (var player in m_players)
@@ -189,18 +191,14 @@ namespace lv.network
 
                     EnqueueSend(new PacketData(playersPos, m_hostEndPoint, true));
                 }
-            }
-            else
-            {
-                if (m_lastTickTime >= m_tickRate)
+                else
                 {
-                    m_lastTickTime = 0;
-
                     Packet playerPos = new Packet();
                     playerPos.WriteByte((byte)PacketType.player_position);
+                    playerPos.WriteString("hekbas_todo_use_token_:)");
                     playerPos.WriteString(m_localEndPoint.ToString());
                     playerPos.WriteVector3(GameManager.Instance.m_player.transform.position);
-                    EnqueueSend(new PacketData(playerPos, m_hostEndPoint, false));
+                    EnqueueSend(new PacketData(playerPos, m_hostEndPoint));
                 }
             }
         }
