@@ -1,4 +1,5 @@
 using lv.network;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -24,6 +25,9 @@ namespace lv.gameplay
         [SerializeField] private GameObject m_camera;
         [SerializeField] private GameObject m_golfBallPrefab;
         [SerializeField] private GameObject m_spawner;
+        [SerializeField] private GameObject m_obstacleParent;
+
+        List<GameObject> m_obstacles = new List<GameObject>();
 
         [SerializeField] private float m_lerpSpeed = 0.01f;
         private float m_lastSnapTime = 0f;
@@ -40,6 +44,32 @@ namespace lv.gameplay
         void Start()
         {
             InstantiatePlayers();
+            m_obstacles = GetAllChildren(m_obstacleParent);
+        }
+
+        void Update()
+        {
+            m_lastSnapTime += Time.deltaTime;
+
+            if (networkManager.isHost)
+                networkManager.m_players[networkManager.m_localEndPoint].m_golfBall = m_player;
+
+            InterpolateBalls();
+
+            if (networkManager.isHost)
+                SendObstacleData();
+            //else InterpolateObstacles();
+
+            // game state machine
+            // ball stopped?
+            // ball inside hole?
+        }
+
+        void InstantiatePlayers()
+        {
+            foreach (var player in networkManager.m_players.Values)
+                player.m_golfBall = Instantiate(m_golfBallPrefab, m_spawner.transform.position, Quaternion.identity);
+
             m_player = networkManager.m_players[networkManager.m_localEndPoint].m_golfBall;
 
             m_camera.AddComponent<CameraFollow>();
@@ -51,15 +81,15 @@ namespace lv.gameplay
                 Color ballColor = Color.white;
                 switch (index)
                 {
-                    case 0: ballColor = new Color(1.0f, 0.0f, 0.0f, 0.4f);  break;  // Red
-                    case 1: ballColor = new Color(0.0f, 1.0f, 0.0f, 0.4f);  break;  // Green
-                    case 2: ballColor = new Color(0.0f, 0.0f, 1.0f, 0.4f);  break;  // Blue
-                    case 3: ballColor = new Color(1.0f, 1.0f, 0.0f, 0.4f);  break;  // Yellow
-                    case 4: ballColor = new Color(1.0f, 0.0f, 1.0f, 0.4f);  break;  // Magenta
-                    case 5: ballColor = new Color(0.0f, 1.0f, 1.0f, 0.4f);  break;  // Cyan
-                    case 6: ballColor = new Color(1.0f, 0.5f, 0.0f, 0.4f);  break;  // Orange
-                    case 7: ballColor = new Color(0.5f, 0.0f, 0.5f, 0.4f);  break;  // Purple
-                    default:ballColor = new Color(0.5f, 0.5f, 0.5f, 0.4f);  break;  // Gray
+                    case 0: ballColor = new Color(1.0f, 0.0f, 0.0f, 0.4f); break;  // Red
+                    case 1: ballColor = new Color(0.0f, 1.0f, 0.0f, 0.4f); break;  // Green
+                    case 2: ballColor = new Color(0.0f, 0.0f, 1.0f, 0.4f); break;  // Blue
+                    case 3: ballColor = new Color(1.0f, 1.0f, 0.0f, 0.4f); break;  // Yellow
+                    case 4: ballColor = new Color(1.0f, 0.0f, 1.0f, 0.4f); break;  // Magenta
+                    case 5: ballColor = new Color(0.0f, 1.0f, 1.0f, 0.4f); break;  // Cyan
+                    case 6: ballColor = new Color(1.0f, 0.5f, 0.0f, 0.4f); break;  // Orange
+                    case 7: ballColor = new Color(0.5f, 0.0f, 0.5f, 0.4f); break;  // Purple
+                    default:ballColor = new Color(0.5f, 0.5f, 0.5f, 0.4f); break;  // Gray
                 }
 
                 if (player.m_golfBall == m_player)
@@ -73,26 +103,54 @@ namespace lv.gameplay
             }
         }
 
-        void Update()
+        public List<GameObject> GetAllChildren(GameObject parent)
         {
-            m_lastSnapTime += Time.deltaTime;
+            List<GameObject> children = new List<GameObject>();
 
-            if (networkManager.isHost)
-                networkManager.m_players[networkManager.m_localEndPoint].m_golfBall = m_player;
+            foreach (Transform child in parent.transform)
+                children.Add(child.gameObject);
 
-            //if (lerpingPos) InterpolatePlayersPositions();
-
-            InterpolateBalls();
-
-            // game state machine
-            // ball stopped?
-            // ball inside hole?
+            return children;
         }
 
-        void InstantiatePlayers()
+        private void SendObstacleData()
         {
+            Packet obsData = new Packet();
+            obsData.WriteByte((byte)PacketType.obstacle1_data);
+            obsData.WriteString("hekbas_todo_use_token_:)");
+            obsData.WriteInt(m_obstacles.Count);
+
+            foreach (var obstacle in m_obstacles)
+            {
+                var obs = obstacle.GetComponent<DynamicObstacles>();
+                obsData.WriteFloat(obs.m_totalTime);
+                obsData.WriteFloat(obs.m_easedTime);
+                obsData.WriteBool(obs.m_reverse);
+            }
+
+            NetworkManager.Instance.EnqueueSend(new PacketData(obsData, NetworkManager.Instance.m_hostEndPoint, true));
+        }
+
+        private void InterpolateBalls()
+        {
+            if (m_curentLerpTime > m_maxLerpTime) return;
+
+            m_curentLerpTime += Time.deltaTime;
+            float t = 1 / m_maxLerpTime * m_curentLerpTime;
+
             foreach (var player in networkManager.m_players.Values)
-                player.m_golfBall = Instantiate(m_golfBallPrefab, m_spawner.transform.position, Quaternion.identity);
+            {
+                player.transform.position = Vector3.Lerp(player.m_netInitPos, player.m_netEndPos, t);
+                player.GetComponent<Rigidbody>().velocity = Vector3.Lerp(player.m_netInitVel, player.m_netEndVel, t);
+            }
+        }
+
+        private void InterpolateObstacles()
+        {
+            foreach (var obstacle in m_obstacles)
+            {
+                //obstacle.transform.position
+            }
         }
 
         public void OnBallStrike(PacketData packetData)
@@ -130,16 +188,16 @@ namespace lv.gameplay
             }
         }
 
-        private void InterpolateBalls()
+        public void OnNetworkObstacleData(PacketData packetData)
         {
-            if (m_curentLerpTime > m_maxLerpTime) return;
+            int obsCount = packetData.m_packet.ReadInt();
 
-            m_curentLerpTime += Time.deltaTime;
-
-            foreach (var player in networkManager.m_players.Values)
+            for (int i = 0; i < obsCount; i++)
             {
-                player.transform.position = Vector3.Lerp(player.m_netInitPos, player.m_netEndPos, 1 / m_maxLerpTime * m_curentLerpTime);
-                player.GetComponent<Rigidbody>().velocity = player.m_netEndVel;
+                var obs = m_obstacles[i].GetComponent<DynamicObstacles>();
+                obs.m_totalTime = packetData.m_packet.ReadFloat();
+                obs.m_easedTime = packetData.m_packet.ReadFloat();
+                obs.m_reverse = packetData.m_packet.ReadBool();
             }
         }
     }

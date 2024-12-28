@@ -26,7 +26,7 @@ namespace lv.network
 
         private Queue<PacketData> m_sendQueue = new Queue<PacketData>();
         private Queue<PacketData> m_receiveQueue = new Queue<PacketData>();
-        private float m_tickRate = 0.05f; // 50ms - 20 ticks/s
+        private float m_tickRate = 0.1f; // 100ms - 10 ticks/s
         private float m_lastTickTime = 0f;
 
         public bool isHost;
@@ -129,6 +129,7 @@ namespace lv.network
                 case PacketType.ball_strike:        BallStrike(packetData);         break;
                 case PacketType.player_position:    PlayerPosition(packetData);     break;
                 case PacketType.player_turn:        PlayerTurn();                   break;
+                case PacketType.obstacle1_data:     Obstacle1Data(packetData);      break;
                 default: Debug.Log("Packet Type not found.");                       break;
             }
         }
@@ -291,15 +292,19 @@ namespace lv.network
                 if (m_players.ContainsKey(ipEndPoint))
                     m_players[ipEndPoint].m_golfBall.transform.position = packetData.m_packet.ReadVector3();
             }
-            else
-            {
-                GameManager.Instance.OnNetworkPlayerPosition(packetData);
-            }
+
+            GameManager.Instance.OnNetworkPlayerPosition(packetData);
         }
 
         private void PlayerTurn()
         {
 
+        }
+
+        private void Obstacle1Data(PacketData packetData)
+        {
+            if (!isHost)
+                GameManager.Instance.OnNetworkObstacleData(packetData);
         }
 
 

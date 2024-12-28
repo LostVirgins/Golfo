@@ -14,12 +14,11 @@ namespace lv.gameplay
         private Vector3 m_startPos;
         private Vector3 m_networkedPos;
 
-        private float m_rateSpeed;
-        private float m_timeToDestiny;
-        private float m_timeToStart;
+        public float m_rateSpeed;
+        public float m_totalTime;
+        public float m_easedTime;
+        public bool m_reverse;
 
-        private float m_easedTime;
-        private bool m_changeDir;
         private bool isServer;
 
         private void Awake()
@@ -31,7 +30,9 @@ namespace lv.gameplay
         {
             m_startPos = transform.position;
             m_rateSpeed = 1f / Vector3.Distance(m_startPos, m_destinyPos) * m_speed;
-            m_changeDir = false;
+            m_totalTime = 0f;
+            m_easedTime = 0f;
+            m_reverse = false;
 
             //if (!isServer)
             //{
@@ -42,90 +43,20 @@ namespace lv.gameplay
         private void Update()
         {
             Movement();
-
-            //if (isServer)
-            //    BroadcastPosition();
-            //else
-            //    InterpolatePosition();
         }
 
         private void Movement()
         {
-            if (m_timeToDestiny <= 1f && !m_changeDir)
-            {
-                m_timeToDestiny += Time.deltaTime * m_rateSpeed;
-                m_easedTime = Easing.InOutSine(m_timeToDestiny);
+            if (m_totalTime > 1f) m_reverse = true;
+            else if (m_totalTime < 0f) m_reverse = false;
 
-                transform.position = Vector3.Lerp(m_startPos, m_destinyPos, m_easedTime);
-            }
+            if (m_reverse)
+                m_totalTime -= Time.deltaTime * m_rateSpeed;
             else
-            {
-                m_changeDir = true;
-                m_timeToDestiny = 0f;
-                //Debug.Log("changed_1");
-            }
+                m_totalTime += Time.deltaTime * m_rateSpeed;
 
-            if (m_timeToStart <= 1f && m_changeDir)
-            {
-                m_timeToStart += Time.deltaTime * m_rateSpeed;
-                m_easedTime = Easing.InOutSine(m_timeToStart);
-
-                transform.position = Vector3.Lerp(m_destinyPos, m_startPos, m_easedTime);
-            }
-            else
-            {
-                m_changeDir = false;
-                m_timeToStart = 0f;
-                //Debug.Log("changed_2");
-            }
-        }
-
-        private void BroadcastPosition()
-        {
-            Packet posData = new Packet();
-            posData.WriteByte((byte)PacketType.dynamicObstacle_position);
-            posData.WriteFloat(m_easedTime);
-            posData.WriteBool(m_changeDir);
-            NetworkManager.Instance.EnqueueSend(new PacketData(posData, NetworkManager.Instance.m_hostEndPoint, true));
-        }
-
-        private void InterpolatePosition()
-        {
-            // Clen this later
-            if (m_timeToDestiny <= 1f && !m_changeDir)
-            {
-                m_timeToDestiny += Time.deltaTime * m_rateSpeed;
-                m_easedTime = Easing.InOutSine(m_timeToDestiny);
-
-                transform.position = Vector3.Lerp(m_startPos, m_destinyPos, m_easedTime);
-            }
-            else
-            {
-                m_changeDir = true;
-                m_timeToDestiny = 0f;
-                //Debug.Log("changed_1");
-            }
-
-            if (m_timeToStart <= 1f && m_changeDir)
-            {
-                m_timeToStart += Time.deltaTime * m_rateSpeed;
-                m_easedTime = Easing.InOutSine(m_timeToStart);
-
-                transform.position = Vector3.Lerp(m_destinyPos, m_startPos, m_easedTime);
-            }
-            else
-            {
-                m_changeDir = false;
-                m_timeToStart = 0f;
-                //Debug.Log("changed_2");
-            }
-
-            transform.position = Vector3.Lerp(transform.position, m_networkedPos, Time.deltaTime * m_speed);
-        }
-
-        public void ReceiveNetworkPosition(Vector3 position)
-        {
-            m_networkedPos = position;
+            m_easedTime = Easing.InOutSine(m_totalTime);
+            transform.position = Vector3.Lerp(m_startPos, m_destinyPos, m_easedTime);
         }
     }
 }

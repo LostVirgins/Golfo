@@ -21,7 +21,7 @@ namespace lv.network
 
         player_position,
         player_turn,
-        dynamicObstacle_position,
+        obstacle1_data,
 
         chat_message,
 
@@ -73,7 +73,7 @@ namespace lv.network
             m_writer.Write(Encoding.UTF8.GetBytes(text));
         }
 
-        public void ReadBool() => m_reader.ReadBoolean();
+        public bool ReadBool() => m_reader.ReadBoolean();
         public byte ReadByte() => m_reader.ReadByte();
         public int ReadInt() => m_reader.ReadInt32();
         public float ReadFloat() => m_reader.ReadSingle();
