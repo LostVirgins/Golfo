@@ -26,7 +26,7 @@ namespace lv.network
 
         private Queue<PacketData> m_sendQueue = new Queue<PacketData>();
         private Queue<PacketData> m_receiveQueue = new Queue<PacketData>();
-        private float m_tickRate = 0.10f; // 100ms - 10 ticks/s
+        private float m_tickRate = 0.05f; // 50ms - 20 ticks/s
         private float m_lastTickTime = 0f;
 
         public bool isHost;
@@ -187,6 +187,7 @@ namespace lv.network
                     {
                         playersPos.WriteString(player.Key.ToString());
                         playersPos.WriteVector3(player.Value.m_golfBall.transform.position);
+                        playersPos.WriteVector3(player.Value.m_golfBall.GetComponent<Rigidbody>().velocity);
                     }
 
                     EnqueueSend(new PacketData(playersPos, m_hostEndPoint, true));
@@ -198,6 +199,7 @@ namespace lv.network
                     playerPos.WriteString("hekbas_todo_use_token_:)");
                     playerPos.WriteString(m_localEndPoint.ToString());
                     playerPos.WriteVector3(GameManager.Instance.m_player.transform.position);
+                    playerPos.WriteVector3(GameManager.Instance.m_player.GetComponent<Rigidbody>().velocity);
                     EnqueueSend(new PacketData(playerPos, m_hostEndPoint));
                 }
             }

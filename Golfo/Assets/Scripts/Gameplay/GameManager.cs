@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using UnityEngine;
+using UnityEngine.UIElements.Experimental;
 
 namespace lv.gameplay
 {
@@ -24,8 +25,11 @@ namespace lv.gameplay
         [SerializeField] private GameObject m_golfBallPrefab;
         [SerializeField] private GameObject m_spawner;
 
-        [SerializeField] private float m_lerpSpeed = 5f;
-        private float m_lerpTime = 0f;
+        [SerializeField] private float m_lerpSpeed = 0.01f;
+        private float m_lastSnapTime = 0f;
+        private float m_maxLerpTime = 0f;
+        private float m_curentLerpTime = 0f;
+
         private bool lerpingPos = false;
 
         private void Awake()
@@ -71,11 +75,14 @@ namespace lv.gameplay
 
         void Update()
         {
+            m_lastSnapTime += Time.deltaTime;
+
             if (networkManager.isHost)
                 networkManager.m_players[networkManager.m_localEndPoint].m_golfBall = m_player;
 
-            if (lerpingPos)
-                InterpolatePlayersPositions();
+            //if (lerpingPos) InterpolatePlayersPositions();
+
+            InterpolateBalls();
 
             // game state machine
             // ball stopped?
@@ -86,28 +93,6 @@ namespace lv.gameplay
         {
             foreach (var player in networkManager.m_players.Values)
                 player.m_golfBall = Instantiate(m_golfBallPrefab, m_spawner.transform.position, Quaternion.identity);
-        }
-
-        void InterpolatePlayersPositions()
-        {
-            foreach (var player in networkManager.m_players)
-            {
-                Vector3 initialPos = player.Value.m_initialPos;
-                Vector3 finalPos = player.Value.m_networkedPos;
-
-                float rateSpeed = 1f / Vector3.Distance(initialPos, finalPos) * m_lerpSpeed;
-
-                m_lerpTime += Time.deltaTime * rateSpeed;
-
-                player.Value.m_golfBall.transform.position =
-                    Vector3.Lerp(transform.position, player.Value.m_networkedPos, m_lerpTime);
-
-                if (m_lerpTime >= 1)
-                {
-                    lerpingPos = false;
-                    m_lerpTime = 0;
-                }
-            }
         }
 
         public void OnBallStrike(PacketData packetData)
@@ -125,7 +110,9 @@ namespace lv.gameplay
 
         public void OnNetworkPlayerPosition(PacketData packetData)
         {
-            string hehe = packetData.m_packet.m_memoryStream.ToString();
+            m_maxLerpTime = m_lastSnapTime;
+            m_lastSnapTime = 0f;
+            m_curentLerpTime = 0f;
 
             int playerCount = packetData.m_packet.ReadInt();
 
@@ -135,9 +122,24 @@ namespace lv.gameplay
 
                 if (networkManager.m_players.ContainsKey(ipEndPoint))
                 {
-                    networkManager.m_players[ipEndPoint].m_networkedPos = packetData.m_packet.ReadVector3();
-                    networkManager.m_players[ipEndPoint].m_initialPos = networkManager.m_players[ipEndPoint].m_golfBall.transform.position;
+                    networkManager.m_players[ipEndPoint].m_netEndPos = packetData.m_packet.ReadVector3();
+                    networkManager.m_players[ipEndPoint].m_netInitPos = networkManager.m_players[ipEndPoint].m_golfBall.transform.position;
+                    networkManager.m_players[ipEndPoint].m_netEndVel = packetData.m_packet.ReadVector3();
+                    networkManager.m_players[ipEndPoint].m_netInitVel = networkManager.m_players[ipEndPoint].m_golfBall.GetComponent<Rigidbody>().velocity;
                 }
+            }
+        }
+
+        private void InterpolateBalls()
+        {
+            if (m_curentLerpTime > m_maxLerpTime) return;
+
+            m_curentLerpTime += Time.deltaTime;
+
+            foreach (var player in networkManager.m_players.Values)
+            {
+                player.transform.position = Vector3.Lerp(player.m_netInitPos, player.m_netEndPos, 1 / m_maxLerpTime * m_curentLerpTime);
+                player.GetComponent<Rigidbody>().velocity = player.m_netEndVel;
             }
         }
     }
