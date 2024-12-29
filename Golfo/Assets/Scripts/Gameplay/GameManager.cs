@@ -51,12 +51,12 @@ namespace lv.gameplay
         {
             m_lastSnapTime += Time.deltaTime;
 
-            if (networkManager.isHost)
+            if (networkManager.m_isHost)
                 networkManager.m_players[networkManager.m_localEndPoint].m_golfBall = m_player;
 
             InterpolateBalls();
 
-            if (networkManager.isHost)
+            if (networkManager.m_isHost)
                 SendObstacleData();
             //else InterpolateObstacles();
 
@@ -68,7 +68,11 @@ namespace lv.gameplay
         void InstantiatePlayers()
         {
             foreach (var player in networkManager.m_players.Values)
+            {
                 player.m_golfBall = Instantiate(m_golfBallPrefab, m_spawner.transform.position, Quaternion.identity);
+                player.m_netInitPos = m_spawner.transform.position;
+                player.m_netEndPos = m_spawner.transform.position;
+            }
 
             m_player = networkManager.m_players[networkManager.m_localEndPoint].m_golfBall;
 
@@ -133,15 +137,16 @@ namespace lv.gameplay
 
         private void InterpolateBalls()
         {
-            if (m_curentLerpTime > m_maxLerpTime) return;
+            if (m_curentLerpTime >= m_maxLerpTime) return;
 
             m_curentLerpTime += Time.deltaTime;
-            float t = 1 / m_maxLerpTime * m_curentLerpTime;
+            float t = m_curentLerpTime / m_maxLerpTime;
 
-            foreach (var player in networkManager.m_players.Values)
+            foreach (var player in networkManager.m_players)
             {
-                player.transform.position = Vector3.Lerp(player.m_netInitPos, player.m_netEndPos, t);
-                player.GetComponent<Rigidbody>().velocity = Vector3.Lerp(player.m_netInitVel, player.m_netEndVel, t);
+                if (player.Key.Equals(networkManager.m_localEndPoint)) continue;
+                player.Value.m_golfBall.transform.position = Vector3.Lerp(player.Value.m_netInitPos, player.Value.m_netEndPos, t);
+                player.Value.m_golfBall.GetComponent<Rigidbody>().velocity = Vector3.Lerp(player.Value.m_netInitVel, player.Value.m_netEndVel, t);
             }
         }
 
@@ -178,13 +183,18 @@ namespace lv.gameplay
             {
                 IPEndPoint ipEndPoint = networkManager.ParseIPEndPoint(packetData.m_packet.ReadString());
 
-                if (networkManager.m_players.ContainsKey(ipEndPoint))
+                if (ipEndPoint.Equals(networkManager.m_localEndPoint))
                 {
-                    networkManager.m_players[ipEndPoint].m_netEndPos = packetData.m_packet.ReadVector3();
-                    networkManager.m_players[ipEndPoint].m_netInitPos = networkManager.m_players[ipEndPoint].m_golfBall.transform.position;
-                    networkManager.m_players[ipEndPoint].m_netEndVel = packetData.m_packet.ReadVector3();
-                    networkManager.m_players[ipEndPoint].m_netInitVel = networkManager.m_players[ipEndPoint].m_golfBall.GetComponent<Rigidbody>().velocity;
+                    packetData.m_packet.ReadVector3();
+                    packetData.m_packet.ReadVector3();
+                    continue;
                 }
+                if (!networkManager.m_players.ContainsKey(ipEndPoint)) continue;
+
+                networkManager.m_players[ipEndPoint].m_netInitPos = networkManager.m_players[ipEndPoint].m_golfBall.transform.position;
+                networkManager.m_players[ipEndPoint].m_netInitVel = networkManager.m_players[ipEndPoint].m_golfBall.GetComponent<Rigidbody>().velocity;
+                networkManager.m_players[ipEndPoint].m_netEndPos = packetData.m_packet.ReadVector3();
+                networkManager.m_players[ipEndPoint].m_netEndVel = packetData.m_packet.ReadVector3();
             }
         }
 

@@ -1,5 +1,6 @@
 using lv.network;
 using Unity.VisualScripting;
+using System.Net;
 using UnityEngine;
 
 namespace lv.gameplay
@@ -17,6 +18,8 @@ namespace lv.gameplay
 
         private float distanceFromBall;
 
+        private float lastSpeed;
+        private bool isDecelerating;
         private bool isIdle;
         private bool isAiming;
 
@@ -32,27 +35,37 @@ namespace lv.gameplay
 
         private void Update()
         {
-            if (rigidbody.velocity.magnitude < stopVelocity)
-                Stop();
+            isDecelerating = lastSpeed >= rigidbody.velocity.magnitude ? true : false;
+            lastSpeed = rigidbody.velocity.magnitude;
+
+            if (isDecelerating && rigidbody.velocity.magnitude < stopVelocity)
+            {
+                isIdle = true;
+                rigidbody.drag = 2.5f;
+                rigidbody.angularDrag = 2.5f;
+            }
+            else
+            {
+                isIdle = false;
+                rigidbody.drag = 0.6f;
+                rigidbody.angularDrag = 0.6f;
+            }
 
             ProcessAim();
         }
 
         private void OnMouseDown()
         {
-            if (isIdle)
-                isAiming = true;
+            if (isIdle) isAiming = true;
         }
 
         private void ProcessAim()
         {
-            if (!isAiming || !isIdle)
-                return;
+            if (!isAiming || !isIdle) return;
 
             Vector3? worldPoint = CastMouseClickRay();
 
-            if (!worldPoint.HasValue)
-                return;
+            if (!worldPoint.HasValue) return;
 
             distanceFromBall = Vector3.Distance(rigidbody.transform.position, worldPoint.Value); //distance ball to mouse
             //Debug.Log(distanceFromBall + "distance from ball");
@@ -78,17 +91,15 @@ namespace lv.gameplay
             lineRendererArrow.enabled = false;
 
             //check if shot possible
-
-            if (minShotDistance > distanceFromBall)
-                return;
+            if (minShotDistance > distanceFromBall) return;
 
             Vector3 horizontalWorldPoint = new Vector3(clampedLineDirectionFromBall.x, transform.position.y, clampedLineDirectionFromBall.z);
             Vector3 direction = (horizontalWorldPoint - transform.position).normalized;
             float strength = Vector3.Distance(transform.position, horizontalWorldPoint);
 
-            isIdle = false;
+            rigidbody.AddForce(-direction * strength * shotPower);
 
-            // Notify Server
+            // Notify Server for input prediction
             Packet packet = new Packet();
             packet.WriteByte((byte)PacketType.ball_strike);
             packet.WriteString("hekbas_todo_use_token_:)");
@@ -126,13 +137,6 @@ namespace lv.gameplay
             };
             lineRendererArrow.SetPositions(positionsArrow);
             lineRendererArrow.enabled = true;
-        }
-
-        private void Stop()
-        {
-            rigidbody.velocity = Vector3.zero;
-            rigidbody.angularVelocity = Vector3.zero;
-            isIdle = true;
         }
 
         private Vector3? CastMouseClickRay()
