@@ -1,4 +1,5 @@
 using lv.network;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace lv.gameplay
@@ -6,9 +7,15 @@ namespace lv.gameplay
     public class LineForce : MonoBehaviour
     {
         [SerializeField] private float shotPower;
-        [SerializeField] private float stopVelocity = 0.15f; //The velocity below which the rigidbody will be considered as stopped
+        [SerializeField] private float stopVelocity; //The velocity below which the rigidbody will be considered as stopped
+        [SerializeField] private float minShotDistance; 
+        [SerializeField] private float maxShotDistance; 
+
 
         [SerializeField] private LineRenderer lineRenderer;
+        [SerializeField] private LineRenderer lineRendererArrow;
+
+        private float distanceFromBall;
 
         private bool isIdle;
         private bool isAiming;
@@ -47,19 +54,35 @@ namespace lv.gameplay
             if (!worldPoint.HasValue)
                 return;
 
-            DrawLine(worldPoint.Value);
+            distanceFromBall = Vector3.Distance(rigidbody.transform.position, worldPoint.Value); //distance ball to mouse
+            //Debug.Log(distanceFromBall + "distance from ball");
+
+            Vector3 directionFromBall = worldPoint.Value - transform.position;
+            Vector3 clampedLineDirectionFromBall = transform.position + Vector3.ClampMagnitude(directionFromBall, maxShotDistance);
+            Vector3 invertedDirectionFromBall = directionFromBall*-1;
+            Vector3 invertedLineDirectionFromBall = transform.position + Vector3.ClampMagnitude(invertedDirectionFromBall, maxShotDistance);
+
+            //Debug.Log(">>> " + clampedLineDirectionFromBall + " <<< & >>> " + worldPoint + " <<< & >>> " + directionFromBall + " <<< ");
+            //Debug.Log("vvv " + clampedLineDirectionFromBall.magnitude + " vvv & vvv " + worldPoint.magnitude + " vvv & vvv " + directionFromBall.magnitude + " vvv ");
+
+            DrawLine(worldPoint.Value, clampedLineDirectionFromBall, invertedLineDirectionFromBall);
 
             if (Input.GetMouseButtonUp(0))
-                Shoot(worldPoint.Value);
+                Shoot(worldPoint.Value, clampedLineDirectionFromBall);
         }
 
-        private void Shoot(Vector3 worldPoint)
+        private void Shoot(Vector3 worldPoint, Vector3 clampedLineDirectionFromBall)
         {
             isAiming = false;
             lineRenderer.enabled = false;
+            lineRendererArrow.enabled = false;
 
-            Vector3 horizontalWorldPoint = new Vector3(worldPoint.x, transform.position.y, worldPoint.z);
+            //check if shot possible
 
+            if (minShotDistance > distanceFromBall)
+                return;
+
+            Vector3 horizontalWorldPoint = new Vector3(clampedLineDirectionFromBall.x, transform.position.y, clampedLineDirectionFromBall.z);
             Vector3 direction = (horizontalWorldPoint - transform.position).normalized;
             float strength = Vector3.Distance(transform.position, horizontalWorldPoint);
 
@@ -77,13 +100,32 @@ namespace lv.gameplay
             NetworkManager.Instance.EnqueueSend(new PacketData(packet, NetworkManager.Instance.m_hostEndPoint));
         }
 
-        private void DrawLine(Vector3 worldPoint)
+        private void DrawLine(Vector3 worldPoint, Vector3 clampedLineDirectionFromBall, Vector3 invertedLineDirectionFromBall)
         {
+            
+            //draw lineRenderer
             Vector3[] positions = {
             new Vector3(transform.position.x, transform.position.y, transform.position.z),
-            new Vector3(worldPoint.x, transform.position.y, worldPoint.z)};
+            new Vector3(clampedLineDirectionFromBall.x, transform.position.y, clampedLineDirectionFromBall.z)};
             lineRenderer.SetPositions(positions);
             lineRenderer.enabled = true;
+
+            //set color
+            float lineColorLenght = distanceFromBall / maxShotDistance;
+            Color currentLineColor = Color.Lerp(Color.green, Color.red, lineColorLenght);
+
+            lineRenderer.startColor = currentLineColor;
+            lineRenderer.endColor = currentLineColor;
+
+            //Debug.Log( "Distance -->" + distanceFromBall + " & >>> " + worldPoint + " <<<");
+
+            //draw lineRendererArrow
+            Vector3[] positionsArrow = {
+                new Vector3(transform.position.x, transform.position.y, transform.position.z),
+                new Vector3(invertedLineDirectionFromBall.x, transform.position.y, invertedLineDirectionFromBall.z)
+            };
+            lineRendererArrow.SetPositions(positionsArrow);
+            lineRendererArrow.enabled = true;
         }
 
         private void Stop()
