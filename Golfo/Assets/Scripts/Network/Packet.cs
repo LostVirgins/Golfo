@@ -15,12 +15,14 @@ namespace lv.network
         invalid_session,
         expired_session,
 
-        lobby_name,
+        lobby_info,
         game_start,
         game_end,
 
         player_position,
-        player_turn,
+        player_in_hole,
+        next_hole,
+
         obstacle1_data,
 
         chat_message,

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -46,10 +47,6 @@ namespace lv.network
 
         public void Update()
         {
-            Debug.Log("Host:    " + m_isHost);
-            Debug.Log("Send:    " + m_sendQueue.Count);
-            Debug.Log("Receive: " + m_receiveQueue.Count);
-
             if (GameManager.Instance != null)
                 ServerTick();
 
@@ -178,13 +175,14 @@ namespace lv.network
 
             switch (packetType)
             {
-                case PacketType.lobby_name:         LobbyInfo(packetData);          break;
+                case PacketType.lobby_info:         LobbyInfo(packetData);          break;
                 case PacketType.chat_message:       ChatMessage(packetData);        break;
                 case PacketType.game_start:         GameStart(packetData);          break;
                 case PacketType.game_end:           GameEnd();                      break;
                 case PacketType.ball_strike:        BallStrike(packetData);         break;
                 case PacketType.player_position:    PlayerPosition(packetData);     break;
-                case PacketType.player_turn:        PlayerTurn();                   break;
+                case PacketType.player_in_hole:     PlayerInHole(packetData);       break;
+                case PacketType.next_hole:          NextHole(packetData);           break;
                 case PacketType.obstacle1_data:     Obstacle1Data(packetData);      break;
                 default: Debug.Log("Packet Type not found.");                       break;
             }
@@ -234,7 +232,7 @@ namespace lv.network
                 AddPlayer(sessionToken, senderEndPoint);
 
                 Packet lobbyNamePacket = new Packet();
-                lobbyNamePacket.WriteByte((byte)PacketType.lobby_name);
+                lobbyNamePacket.WriteByte((byte)PacketType.lobby_info);
                 lobbyNamePacket.WriteString(sessionToken);
                 lobbyNamePacket.WriteString(senderEndPoint.ToString());
                 lobbyNamePacket.WriteString(m_lobbyName);
@@ -305,11 +303,11 @@ namespace lv.network
             {
                 IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
 
-                if (m_players.ContainsKey(ipEndPoint))
-                {
-                    m_players[ipEndPoint].m_netEndPos = packetData.m_packet.ReadVector3();
-                    m_players[ipEndPoint].m_netEndVel = packetData.m_packet.ReadVector3();
-                }
+                if (!m_players.ContainsKey(ipEndPoint)) return;
+                if (m_players[ipEndPoint].m_inHole) return;
+
+                m_players[ipEndPoint].m_netEndPos = packetData.m_packet.ReadVector3();
+                m_players[ipEndPoint].m_netEndVel = packetData.m_packet.ReadVector3();
             }
             else
             {
@@ -317,9 +315,37 @@ namespace lv.network
             }
         }
 
-        private void PlayerTurn()
+        private void PlayerInHole(PacketData packetData)
         {
+            if (m_isHost)
+            {
+                IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
+                m_players[ipEndPoint].m_inHole = true;
+                GameManager.Instance.m_gameState = GameState.player_in_hole;
 
+                bool isHoleFinished = true;
+                foreach (var player in m_players.Values)
+                {
+                    if (player.m_inHole == false)
+                    {
+                        isHoleFinished = false;
+                        break;
+                    }
+                }
+
+                if (isHoleFinished == true)
+                {
+                    Debug.Log("ALL IN HOLE");
+                    GameManager.Instance.OnAllPlayersInHole(packetData);
+                }
+            }
+        }
+
+        private void NextHole(PacketData packetData)
+        {
+            GameManager.Instance.OnNextHole(packetData);
+            foreach (var player in m_players.Values)
+                player.m_inHole = false;
         }
 
         private void Obstacle1Data(PacketData packetData)

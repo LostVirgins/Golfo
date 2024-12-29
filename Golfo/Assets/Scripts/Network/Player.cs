@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace lv.network
@@ -11,6 +12,9 @@ namespace lv.network
         public Vector3 m_netEndPos;
         public Vector3 m_netInitVel;
         public Vector3 m_netEndVel;
+
+        public bool m_inHole = false;
+        public List<int> m_score = new List<int>();
 
         public Player(string sessionToken)
         {

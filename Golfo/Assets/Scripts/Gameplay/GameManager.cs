@@ -10,7 +10,9 @@ namespace lv.gameplay
 {
     public enum GameState : byte
     {
-        playing
+        playing,
+        player_in_hole,
+        game_finished
     }
 
     public class GameManager : MonoBehaviour
@@ -18,7 +20,7 @@ namespace lv.gameplay
         public static GameManager Instance { get; private set; }
         NetworkManager networkManager = NetworkManager.Instance;
 
-        public GameState m_gameState { get; private set; } = GameState.playing;
+        public GameState m_gameState = GameState.playing;
 
         public GameObject m_player;
 
@@ -26,6 +28,7 @@ namespace lv.gameplay
         [SerializeField] private GameObject m_golfBallPrefab;
         [SerializeField] private GameObject m_spawner;
         [SerializeField] private GameObject m_obstacleParent;
+        [SerializeField] private GameObject m_mapData;
 
         List<GameObject> m_obstacles = new List<GameObject>();
 
@@ -33,8 +36,9 @@ namespace lv.gameplay
         private float m_lastSnapTime = 0f;
         private float m_maxLerpTime = 0f;
         private float m_curentLerpTime = 0f;
-
         private bool lerpingPos = false;
+
+        private int currentHole = 0;
 
         private void Awake()
         {
@@ -51,18 +55,11 @@ namespace lv.gameplay
         {
             m_lastSnapTime += Time.deltaTime;
 
-            if (networkManager.m_isHost)
-                networkManager.m_players[networkManager.m_localEndPoint].m_golfBall = m_player;
-
             InterpolateBalls();
 
             if (networkManager.m_isHost)
                 SendObstacleData();
             //else InterpolateObstacles();
-
-            // game state machine
-            // ball stopped?
-            // ball inside hole?
         }
 
         void InstantiatePlayers()
@@ -78,6 +75,7 @@ namespace lv.gameplay
 
             m_camera.AddComponent<CameraFollow>();
             m_camera.GetComponent<CameraFollow>().m_target = m_player.transform;
+            m_player.AddComponent<EnterHole>();
 
             int index = 0;
             foreach (var player in networkManager.m_players.Values)
@@ -133,6 +131,17 @@ namespace lv.gameplay
             }
 
             NetworkManager.Instance.EnqueueSend(new PacketData(obsData, NetworkManager.Instance.m_hostEndPoint, true));
+        }
+
+        public void PlayerInHole()
+        {
+            if (networkManager.m_players[networkManager.m_localEndPoint].m_inHole) return;
+
+            Packet holeData = new Packet();
+            holeData.WriteByte((byte)PacketType.player_in_hole);
+            holeData.WriteString("hekbas_todo_use_token_:)");
+            holeData.WriteString(networkManager.m_localEndPoint.ToString());
+            NetworkManager.Instance.EnqueueSend(new PacketData(holeData, NetworkManager.Instance.m_hostEndPoint));
         }
 
         private void InterpolateBalls()
@@ -208,6 +217,44 @@ namespace lv.gameplay
                 obs.m_totalTime = packetData.m_packet.ReadFloat();
                 obs.m_easedTime = packetData.m_packet.ReadFloat();
                 obs.m_reverse = packetData.m_packet.ReadBool();
+            }
+        }
+
+        public void OnAllPlayersInHole(PacketData packetData)
+        {
+            if (currentHole == 5)
+            {
+                // Game Finished
+            }
+            else
+            {
+                currentHole++;
+
+                Packet obsData = new Packet();
+                obsData.WriteByte((byte)PacketType.next_hole);
+                obsData.WriteString("hekbas_todo_use_token_:)");
+                obsData.WriteInt(currentHole);
+                NetworkManager.Instance.EnqueueSend(new PacketData(obsData, NetworkManager.Instance.m_hostEndPoint, true));
+
+                obsData.SetStreamPos(0);
+                obsData.ReadByte();
+                obsData.ReadString();
+                OnNextHole(new PacketData(obsData, NetworkManager.Instance.m_hostEndPoint));
+            }
+        }
+
+        public void OnNextHole(PacketData packetData)
+        {
+            currentHole = packetData.m_packet.ReadInt();
+            Vector3 newPosition = m_mapData.GetComponent<MapData>().m_Holes[currentHole].spawnPoint.transform.position;
+
+            foreach (var player in networkManager.m_players.Values)
+            {
+                player.m_golfBall.transform.position = newPosition;
+                player.m_netInitPos = newPosition;
+                player.m_netEndPos = newPosition;
+                player.m_netInitVel = Vector3.zero;
+                player.m_netEndVel = Vector3.zero;
             }
         }
     }
