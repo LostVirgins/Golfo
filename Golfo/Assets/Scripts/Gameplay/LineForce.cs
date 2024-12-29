@@ -25,6 +25,8 @@ namespace lv.gameplay
 
         private Rigidbody rigidbody;
 
+        public Vector3 lastShotPosition { get; set; }
+
         private void Awake()
         {
             rigidbody = GetComponent<Rigidbody>();
@@ -92,6 +94,9 @@ namespace lv.gameplay
 
             //check if shot possible
             if (minShotDistance > distanceFromBall) return;
+
+            //save last pos as checkpoint when falling out a course
+            lastShotPosition = transform.position;
 
             Vector3 horizontalWorldPoint = new Vector3(clampedLineDirectionFromBall.x, transform.position.y, clampedLineDirectionFromBall.z);
             Vector3 direction = (horizontalWorldPoint - transform.position).normalized;
