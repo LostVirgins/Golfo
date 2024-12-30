@@ -55,6 +55,7 @@ namespace lv.gameplay
         {
             m_lastSnapTime += Time.deltaTime;
 
+            //if (m_gameState == GameState.playing)
             InterpolateBalls();
 
             if (networkManager.m_isHost)
@@ -245,16 +246,22 @@ namespace lv.gameplay
 
         public void OnNextHole(PacketData packetData)
         {
+            GameManager.Instance.m_gameState = GameState.player_in_hole;
+
             currentHole = packetData.m_packet.ReadInt();
             Vector3 newPosition = m_mapData.GetComponent<MapData>().m_Holes[currentHole].spawnPoint.transform.position;
 
-            foreach (var player in networkManager.m_players.Values)
+            m_player.transform.position = newPosition;
+            m_player.GetComponent<Rigidbody>().velocity = Vector3.zero;
+
+            if (networkManager.m_isHost)
             {
-                player.m_golfBall.transform.position = newPosition;
-                player.m_netInitPos = newPosition;
-                player.m_netEndPos = newPosition;
-                player.m_netInitVel = Vector3.zero;
-                player.m_netEndVel = Vector3.zero;
+                foreach (var player in networkManager.m_players.Values)
+                {
+                    player.m_netEndPos = newPosition;
+                    player.m_netEndVel = Vector3.zero;
+                    player.m_inHole = false;
+                }
             }
         }
     }

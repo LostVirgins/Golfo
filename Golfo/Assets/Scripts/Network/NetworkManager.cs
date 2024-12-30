@@ -304,8 +304,6 @@ namespace lv.network
                 IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
 
                 if (!m_players.ContainsKey(ipEndPoint)) return;
-                if (m_players[ipEndPoint].m_inHole) return;
-
                 m_players[ipEndPoint].m_netEndPos = packetData.m_packet.ReadVector3();
                 m_players[ipEndPoint].m_netEndVel = packetData.m_packet.ReadVector3();
             }
@@ -321,7 +319,6 @@ namespace lv.network
             {
                 IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
                 m_players[ipEndPoint].m_inHole = true;
-                GameManager.Instance.m_gameState = GameState.player_in_hole;
 
                 bool isHoleFinished = true;
                 foreach (var player in m_players.Values)
@@ -343,9 +340,8 @@ namespace lv.network
 
         private void NextHole(PacketData packetData)
         {
-            GameManager.Instance.OnNextHole(packetData);
-            foreach (var player in m_players.Values)
-                player.m_inHole = false;
+            if (!m_isHost)
+                GameManager.Instance.OnNextHole(packetData);
         }
 
         private void Obstacle1Data(PacketData packetData)
