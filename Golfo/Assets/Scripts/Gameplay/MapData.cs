@@ -10,8 +10,9 @@ namespace lv.gameplay
         [Serializable]
         public struct Hole
         {
-            public GameObject spawnPoint;
             public int par;
+            public GameObject spawnPoint;
+            public GameObject bound;
         }
 
         public List<Hole> m_Holes = new List<Hole>();

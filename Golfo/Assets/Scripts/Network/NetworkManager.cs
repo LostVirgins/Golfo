@@ -189,7 +189,7 @@ namespace lv.network
         }
 
 
-        // Send operations ----------------------------------------------------------
+        // Send Operations ----------------------------------------------------------
         private void SendPacket(PacketData packetData)
         {
             byte[] data = packetData.m_packet.GetData();
@@ -318,6 +318,7 @@ namespace lv.network
             if (m_isHost)
             {
                 IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
+                Debug.Log("Enter Hole" + ipEndPoint.ToSafeString());
                 m_players[ipEndPoint].m_inHole = true;
 
                 bool isHoleFinished = true;

@@ -8,9 +8,9 @@ namespace lv.gameplay
     public class LineForce : MonoBehaviour
     {
         [SerializeField] private float shotPower;
-        [SerializeField] private float stopVelocity; //The velocity below which the rigidbody will be considered as stopped
-        [SerializeField] private float minShotDistance; 
-        [SerializeField] private float maxShotDistance; 
+        [SerializeField] private float stopVelocity;
+        [SerializeField] private float minShotDistance;
+        [SerializeField] private float maxShotDistance;
 
 
         [SerializeField] private LineRenderer lineRenderer;

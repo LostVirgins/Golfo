@@ -5,8 +5,7 @@ namespace lv.gameplay
 {
     public class Bound : MonoBehaviour
     {
-        [SerializeField] private GameObject spawner;
-        [SerializeField] private float waitTime;
+        [SerializeField] private float waitTime = 1.0f;
         private Collider playerCollider;
 
         private void OnTriggerExit(Collider collider)
@@ -23,7 +22,7 @@ namespace lv.gameplay
         {
             Debug.Log("Coroutine started...");
 
-            yield return new WaitForSeconds(1.0f);
+            yield return new WaitForSeconds(waitTime);
 
             playerCollider.gameObject.transform.position = playerCollider.gameObject.GetComponent<LineForce>().lastShotPosition;
             playerCollider.attachedRigidbody.velocity = Vector3.zero;

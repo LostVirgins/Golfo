@@ -1,4 +1,5 @@
 using lv.network;
+using lv.ui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -143,6 +144,8 @@ namespace lv.gameplay
             holeData.WriteString("hekbas_todo_use_token_:)");
             holeData.WriteString(networkManager.m_localEndPoint.ToString());
             NetworkManager.Instance.EnqueueSend(new PacketData(holeData, NetworkManager.Instance.m_hostEndPoint));
+
+            UI_InGame.Instance.DebugScreenLog("Me cai :( - " + currentHole);
         }
 
         private void InterpolateBalls()
@@ -193,13 +196,13 @@ namespace lv.gameplay
             {
                 IPEndPoint ipEndPoint = networkManager.ParseIPEndPoint(packetData.m_packet.ReadString());
 
-                if (ipEndPoint.Equals(networkManager.m_localEndPoint))
+                if (ipEndPoint.Equals(networkManager.m_localEndPoint) ||
+                    !networkManager.m_players.ContainsKey(ipEndPoint))
                 {
                     packetData.m_packet.ReadVector3();
                     packetData.m_packet.ReadVector3();
                     continue;
                 }
-                if (!networkManager.m_players.ContainsKey(ipEndPoint)) continue;
 
                 networkManager.m_players[ipEndPoint].m_netInitPos = networkManager.m_players[ipEndPoint].m_golfBall.transform.position;
                 networkManager.m_players[ipEndPoint].m_netInitVel = networkManager.m_players[ipEndPoint].m_golfBall.GetComponent<Rigidbody>().velocity;
@@ -250,9 +253,15 @@ namespace lv.gameplay
 
             currentHole = packetData.m_packet.ReadInt();
             Vector3 newPosition = m_mapData.GetComponent<MapData>().m_Holes[currentHole].spawnPoint.transform.position;
+            m_mapData.GetComponent<MapData>().m_Holes[currentHole-1].bound.SetActive(false);
 
             m_player.transform.position = newPosition;
             m_player.GetComponent<Rigidbody>().velocity = Vector3.zero;
+
+            UI_InGame.Instance.DebugScreenLog(m_player.transform.position.ToString());
+            UI_InGame.Instance.DebugScreenLog(m_player.GetComponent<Rigidbody>().velocity.ToString());
+
+            m_mapData.GetComponent<MapData>().m_Holes[currentHole].bound.SetActive(true);
 
             if (networkManager.m_isHost)
             {

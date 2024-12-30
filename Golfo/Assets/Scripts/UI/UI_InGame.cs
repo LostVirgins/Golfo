@@ -1,38 +1,28 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using TMPro;
-using UnityEditor.MemoryProfiler;
 using UnityEngine;
 
-namespace lv.gameplay
+namespace lv.ui
 {
     public class UI_InGame : MonoBehaviour
     {
+        public static UI_InGame Instance { get; private set; }
 
         public GameObject m_debugSec;
         public GameObject m_debugMessagePrefab;
         public GameObject m_debugViewContent;
 
-        // Start is called before the first frame update
-        void Start()
+        void Awake()
         {
-
+            Instance = this;
         }
 
-        // Update is called once per frame
         void Update()
         {
-            if(Input.GetKeyDown(KeyCode.F1))
+            if(Input.GetKeyDown(KeyCode.Tab))
                 TogleDebugWindow();
-
-            if (Input.GetKeyDown(KeyCode.F2))
-            {
-                DebugScreenLog("hekbai putelo");
-            }
         }
 
-        #region DebugWindow
+    #region DebugWindow
 
         void TogleDebugWindow()
         {
@@ -53,6 +43,7 @@ namespace lv.gameplay
             contentRect.anchoredPosition = new Vector2(contentRect.anchoredPosition.x, 0);
         }
 
-        #endregion
+    #endregion
+
     }
 }
