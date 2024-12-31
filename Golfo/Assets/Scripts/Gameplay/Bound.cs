@@ -12,22 +12,20 @@ namespace lv.gameplay
         {
             if (collider.CompareTag("Player"))
             {
+                Debug.Log("Ball out of bounds");
                 playerCollider = collider;
                 StartCoroutine(DelayedTP());
-                Debug.Log("collision");
             }
         }
 
         private IEnumerator DelayedTP()
         {
-            Debug.Log("Coroutine started...");
-
             yield return new WaitForSeconds(waitTime);
 
             playerCollider.gameObject.transform.position = playerCollider.gameObject.GetComponent<LineForce>().lastShotPosition;
             playerCollider.attachedRigidbody.velocity = Vector3.zero;
             playerCollider.attachedRigidbody.angularVelocity = Vector3.zero;
-            Debug.Log("tp donete");
+            Debug.Log("Teleported back to last position");
         }
     }
 }

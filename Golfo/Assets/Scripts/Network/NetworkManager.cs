@@ -454,5 +454,13 @@ namespace lv.network
 
             throw new FormatException($"Invalid IPEndPoint string: {endPointString}");
         }
+
+        /// <summary>
+        /// Fetches local player from players list.
+        /// </summary>
+        public Player MyPlayer()
+        {
+            return m_players[m_localEndPoint];
+        }
     }
 }

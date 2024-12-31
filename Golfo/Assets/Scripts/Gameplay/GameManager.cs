@@ -12,7 +12,7 @@ namespace lv.gameplay
     public enum GameState : byte
     {
         playing,
-        player_in_hole,
+        changing_hole,
         game_finished
     }
 
@@ -40,6 +40,7 @@ namespace lv.gameplay
         private bool lerpingPos = false;
 
         private int currentHole = 0;
+        private Vector3 newPosition;
 
         private void Awake()
         {
@@ -64,6 +65,28 @@ namespace lv.gameplay
             //else InterpolateObstacles();
         }
 
+        void FixedUpdate()
+        {
+            if (m_gameState == GameState.changing_hole)
+            {
+                m_mapData.GetComponent<MapData>().m_Holes[currentHole - 1].bound.SetActive(false);
+
+                m_player.GetComponent<Rigidbody>().velocity = Vector3.zero;
+                m_player.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+                m_player.GetComponent<Rigidbody>().position = newPosition;
+
+                m_mapData.GetComponent<MapData>().m_Holes[currentHole].bound.SetActive(true);
+
+                if (networkManager.m_isHost)
+                {
+                    foreach (var player in networkManager.m_players)
+                        player.Value.m_inHole = false;
+                }
+
+                m_gameState = GameState.playing;
+            }
+        }
+
         void InstantiatePlayers()
         {
             foreach (var player in networkManager.m_players.Values)
@@ -73,7 +96,7 @@ namespace lv.gameplay
                 player.m_netEndPos = m_spawner.transform.position;
             }
 
-            m_player = networkManager.m_players[networkManager.m_localEndPoint].m_golfBall;
+            m_player = networkManager.MyPlayer().m_golfBall;
 
             m_camera.AddComponent<CameraFollow>();
             m_camera.GetComponent<CameraFollow>().m_target = m_player.transform;
@@ -137,7 +160,7 @@ namespace lv.gameplay
 
         public void PlayerInHole()
         {
-            if (networkManager.m_players[networkManager.m_localEndPoint].m_inHole) return;
+            if (networkManager.MyPlayer().m_inHole) return;
 
             Packet holeData = new Packet();
             holeData.WriteByte((byte)PacketType.player_in_hole);
@@ -249,29 +272,9 @@ namespace lv.gameplay
 
         public void OnNextHole(PacketData packetData)
         {
-            GameManager.Instance.m_gameState = GameState.player_in_hole;
-
+            GameManager.Instance.m_gameState = GameState.changing_hole;
             currentHole = packetData.m_packet.ReadInt();
-            Vector3 newPosition = m_mapData.GetComponent<MapData>().m_Holes[currentHole].spawnPoint.transform.position;
-            m_mapData.GetComponent<MapData>().m_Holes[currentHole-1].bound.SetActive(false);
-
-            m_player.transform.position = newPosition;
-            m_player.GetComponent<Rigidbody>().velocity = Vector3.zero;
-
-            UI_InGame.Instance.DebugScreenLog(m_player.transform.position.ToString());
-            UI_InGame.Instance.DebugScreenLog(m_player.GetComponent<Rigidbody>().velocity.ToString());
-
-            m_mapData.GetComponent<MapData>().m_Holes[currentHole].bound.SetActive(true);
-
-            if (networkManager.m_isHost)
-            {
-                foreach (var player in networkManager.m_players.Values)
-                {
-                    player.m_netEndPos = newPosition;
-                    player.m_netEndVel = Vector3.zero;
-                    player.m_inHole = false;
-                }
-            }
+            newPosition = m_mapData.GetComponent<MapData>().m_Holes[currentHole].spawnPoint.transform.position;
         }
     }
 }
