@@ -151,7 +151,7 @@ GameObject:
   - component: {fileID: 8464029916628817852}
   - component: {fileID: 853864565688744547}
   - component: {fileID: 3145866685752636075}
-  m_Layer: 2
+  m_Layer: 8
   m_Name: GolfBall
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -280,7 +280,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4275410481362058772}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5f1ab71af0eea04c998b6c8b2a279c2, type: 3}
   m_Name: 

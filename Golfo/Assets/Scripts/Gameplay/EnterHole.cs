@@ -9,8 +9,6 @@ namespace lv.gameplay
             if (other.CompareTag("Hole"))
             {
                 GameManager.Instance.PlayerInHole();
-                //other.gameObject.GetComponent<Collider>().enabled = false;
-                //other.gameObject.GetComponent<Rigidbody>().isKinematic = true;
             }
         }
     }

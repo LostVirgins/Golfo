@@ -6,16 +6,17 @@ TagManager:
   tags:
   - Wall
   - Hole
+  - MyPlayer
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Trigger
   - Water
   - UI
   - Wall
   - PlayerBall
-  - 
+  - Balls
   - 
   - 
   - 

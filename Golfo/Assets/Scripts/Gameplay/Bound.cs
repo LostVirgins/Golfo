@@ -1,31 +1,25 @@
+using lv.ui;
 using System.Collections;
+using System.Net.NetworkInformation;
 using UnityEngine;
 
 namespace lv.gameplay
 {
     public class Bound : MonoBehaviour
     {
-        [SerializeField] private float waitTime = 1.0f;
-        private Collider playerCollider;
+        [SerializeField] private float waitTime = 1.5f;
 
         private void OnTriggerExit(Collider collider)
         {
-            if (collider.CompareTag("Player"))
-            {
-                Debug.Log("Ball out of bounds");
-                playerCollider = collider;
+            if (collider.CompareTag("MyPlayer"))
                 StartCoroutine(DelayedTP());
-            }
         }
 
         private IEnumerator DelayedTP()
         {
             yield return new WaitForSeconds(waitTime);
-
-            playerCollider.gameObject.transform.position = playerCollider.gameObject.GetComponent<LineForce>().lastShotPosition;
-            playerCollider.attachedRigidbody.velocity = Vector3.zero;
-            playerCollider.attachedRigidbody.angularVelocity = Vector3.zero;
-            Debug.Log("Teleported back to last position");
+            GameManager.Instance.m_gameState = GameState.out_of_bounds;
+            UI_InGame.Instance.DebugScreenLog("Ball out of bounds");
         }
     }
 }

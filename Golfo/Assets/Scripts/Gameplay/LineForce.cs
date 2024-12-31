@@ -2,6 +2,7 @@ using lv.network;
 using Unity.VisualScripting;
 using System.Net;
 using UnityEngine;
+using lv.ui;
 
 namespace lv.gameplay
 {
@@ -11,7 +12,6 @@ namespace lv.gameplay
         [SerializeField] private float stopVelocity;
         [SerializeField] private float minShotDistance;
         [SerializeField] private float maxShotDistance;
-
 
         [SerializeField] private LineRenderer lineRenderer;
         [SerializeField] private LineRenderer lineRendererArrow;
@@ -25,6 +25,8 @@ namespace lv.gameplay
 
         private Rigidbody rigidbody;
 
+        Ray ray;
+        RaycastHit hit;
         public Vector3 lastShotPosition { get; set; }
 
         private void Awake()
@@ -53,32 +55,30 @@ namespace lv.gameplay
                 rigidbody.angularDrag = 0.6f;
             }
 
-            ProcessAim();
-        }
+            if (Input.GetMouseButtonDown(0))
+            {
+                int playerBallLayerMask = LayerMask.GetMask("PlayerBall");
+                ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-        private void OnMouseDown()
-        {
-            if (isIdle) isAiming = true;
+                if (Physics.Raycast(ray, out hit, Mathf.Infinity, playerBallLayerMask))
+                    if (isIdle) isAiming = true;
+            }
+
+            ProcessAim();
         }
 
         private void ProcessAim()
         {
             if (!isAiming || !isIdle) return;
-
             Vector3? worldPoint = CastMouseClickRay();
-
             if (!worldPoint.HasValue) return;
 
-            distanceFromBall = Vector3.Distance(rigidbody.transform.position, worldPoint.Value); //distance ball to mouse
-            //Debug.Log(distanceFromBall + "distance from ball");
+            distanceFromBall = Vector3.Distance(rigidbody.transform.position, worldPoint.Value);
 
             Vector3 directionFromBall = worldPoint.Value - transform.position;
             Vector3 clampedLineDirectionFromBall = transform.position + Vector3.ClampMagnitude(directionFromBall, maxShotDistance);
-            Vector3 invertedDirectionFromBall = directionFromBall*-1;
+            Vector3 invertedDirectionFromBall = directionFromBall * -1;
             Vector3 invertedLineDirectionFromBall = transform.position + Vector3.ClampMagnitude(invertedDirectionFromBall, maxShotDistance);
-
-            //Debug.Log(">>> " + clampedLineDirectionFromBall + " <<< & >>> " + worldPoint + " <<< & >>> " + directionFromBall + " <<< ");
-            //Debug.Log("vvv " + clampedLineDirectionFromBall.magnitude + " vvv & vvv " + worldPoint.magnitude + " vvv & vvv " + directionFromBall.magnitude + " vvv ");
 
             DrawLine(worldPoint.Value, clampedLineDirectionFromBall, invertedLineDirectionFromBall);
 
@@ -91,6 +91,8 @@ namespace lv.gameplay
             isAiming = false;
             lineRenderer.enabled = false;
             lineRendererArrow.enabled = false;
+
+            UI_InGame.Instance.DebugScreenLog("IS AIMING FALSE -------");
 
             //check if shot possible
             if (minShotDistance > distanceFromBall) return;
@@ -118,7 +120,6 @@ namespace lv.gameplay
 
         private void DrawLine(Vector3 worldPoint, Vector3 clampedLineDirectionFromBall, Vector3 invertedLineDirectionFromBall)
         {
-            
             //draw lineRenderer
             Vector3[] positions = {
             new Vector3(transform.position.x, transform.position.y, transform.position.z),
@@ -126,9 +127,13 @@ namespace lv.gameplay
             lineRenderer.SetPositions(positions);
             lineRenderer.enabled = true;
 
-            //set color
-            float lineColorLenght = distanceFromBall / maxShotDistance;
-            Color currentLineColor = Color.Lerp(Color.green, Color.red, lineColorLenght);
+            // Set color
+            float lineColorLength = distanceFromBall / maxShotDistance;
+            Color currentLineColor;
+            if (lineColorLength <= 0.5f)
+                currentLineColor = Color.Lerp(Color.green, Color.yellow, lineColorLength / 0.5f);
+            else
+                currentLineColor = Color.Lerp(Color.yellow, Color.red, (lineColorLength - 0.5f) / 0.5f);
 
             lineRenderer.startColor = currentLineColor;
             lineRenderer.endColor = currentLineColor;
@@ -146,22 +151,14 @@ namespace lv.gameplay
 
         private Vector3? CastMouseClickRay()
         {
-            if (GameManager.Instance.m_player.GetComponent<Rigidbody>() != rigidbody)
-                return null;
-
-            var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            var plane = new Plane(Vector3.up, rigidbody.position);
-
-            // Debug Direction Ray
-            //Debug.DrawRay(rigidbody.position, direction * 100, Color.red);
-
-            float rayDistance;
-            if (plane.Raycast(ray, out rayDistance))
+            if (hit.collider.gameObject == GameManager.Instance.m_player)
             {
-                // Debug Shot Ray
-                //Debug.DrawRay(rigidbody.position, ray.GetPoint(rayDistance), Color.yellow);
+                var plane = new Plane(Vector3.up, GameManager.Instance.m_player.GetComponent<Rigidbody>().position);
+                var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-                return ray.GetPoint(rayDistance);
+                float rayDistance;
+                if (plane.Raycast(ray, out rayDistance))
+                    return ray.GetPoint(rayDistance);
             }
 
             return null;

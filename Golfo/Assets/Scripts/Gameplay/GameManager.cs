@@ -12,6 +12,7 @@ namespace lv.gameplay
     public enum GameState : byte
     {
         playing,
+        out_of_bounds,
         changing_hole,
         game_finished
     }
@@ -24,6 +25,7 @@ namespace lv.gameplay
         public GameState m_gameState = GameState.playing;
 
         public GameObject m_player;
+        public Rigidbody m_rb;
 
         [SerializeField] private GameObject m_camera;
         [SerializeField] private GameObject m_golfBallPrefab;
@@ -51,6 +53,7 @@ namespace lv.gameplay
         {
             InstantiatePlayers();
             m_obstacles = GetAllChildren(m_obstacleParent);
+            m_rb = m_player.GetComponent<Rigidbody>();
         }
 
         void Update()
@@ -67,15 +70,22 @@ namespace lv.gameplay
 
         void FixedUpdate()
         {
+            if (m_gameState == GameState.out_of_bounds)
+            {
+                m_rb.velocity = Vector3.zero;
+                m_rb.angularVelocity = Vector3.zero;
+                m_rb.position = m_player.GetComponent<LineForce>().lastShotPosition;
+                m_gameState = GameState.playing;
+            }
+
             if (m_gameState == GameState.changing_hole)
             {
                 m_mapData.GetComponent<MapData>().m_Holes[currentHole - 1].bound.SetActive(false);
-
-                m_player.GetComponent<Rigidbody>().velocity = Vector3.zero;
-                m_player.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
-                m_player.GetComponent<Rigidbody>().position = newPosition;
-
                 m_mapData.GetComponent<MapData>().m_Holes[currentHole].bound.SetActive(true);
+
+                m_rb.velocity = Vector3.zero;
+                m_rb.angularVelocity = Vector3.zero;
+                m_rb.position = newPosition;
 
                 if (networkManager.m_isHost)
                 {
@@ -116,12 +126,14 @@ namespace lv.gameplay
                     case 5: ballColor = new Color(0.0f, 1.0f, 1.0f, 0.4f); break;  // Cyan
                     case 6: ballColor = new Color(1.0f, 0.5f, 0.0f, 0.4f); break;  // Orange
                     case 7: ballColor = new Color(0.5f, 0.0f, 0.5f, 0.4f); break;  // Purple
-                    default:ballColor = new Color(0.5f, 0.5f, 0.5f, 0.4f); break;  // Gray
+                    default: ballColor = UnityEngine.Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f); break; //Rand for extra people
                 }
 
                 if (player.m_golfBall == m_player)
                 {
+                    player.m_golfBall.GetComponent<LineForce>().enabled = true;
                     player.m_golfBall.layer = LayerMask.NameToLayer("PlayerBall");
+                    player.m_golfBall.tag = "MyPlayer";
                     ballColor.a = 1.0f;
                 }
 
