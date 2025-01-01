@@ -176,6 +176,7 @@ namespace lv.network
             switch (packetType)
             {
                 case PacketType.lobby_info:         LobbyInfo(packetData);          break;
+                case PacketType.chat_join:          ChatJoin(packetData);           break;
                 case PacketType.chat_message:       ChatMessage(packetData);        break;
                 case PacketType.game_start:         GameStart(packetData);          break;
                 case PacketType.game_end:           GameEnd();                      break;
@@ -207,7 +208,7 @@ namespace lv.network
         {
             foreach (var client in m_players.Keys)
             {
-                if (client.Equals(m_hostEndPoint)) continue;
+                if (packetData.m_omitSender && client.Equals(m_hostEndPoint)) continue;
                 SendPacket(packetData.m_packet, client);
             }
         }
@@ -229,7 +230,7 @@ namespace lv.network
 
             if (status == PacketType.auth_success)
             {
-                AddPlayer(sessionToken, senderEndPoint);
+                AddPlayer(username, sessionToken, senderEndPoint);
 
                 Packet lobbyNamePacket = new Packet();
                 lobbyNamePacket.WriteByte((byte)PacketType.lobby_info);
@@ -237,6 +238,12 @@ namespace lv.network
                 lobbyNamePacket.WriteString(senderEndPoint.ToString());
                 lobbyNamePacket.WriteString(m_lobbyName);
                 m_sendQueue.Enqueue(new PacketData(lobbyNamePacket, senderEndPoint));
+
+                Packet chatJoin = new Packet();
+                chatJoin.WriteByte((byte)PacketType.chat_join);
+                chatJoin.WriteString(sessionToken);
+                chatJoin.WriteString(username);
+                m_sendQueue.Enqueue(new PacketData(chatJoin, senderEndPoint, true, false));
             }
             else
             {
@@ -244,9 +251,9 @@ namespace lv.network
             }
         }
 
-        private void AddPlayer(string sessionToken, IPEndPoint senderEndPoint)
+        private void AddPlayer(string username, string sessionToken, IPEndPoint senderEndPoint)
         {
-            m_players[senderEndPoint] = new Player(sessionToken);
+            m_players[senderEndPoint] = new Player(username, sessionToken);
             Debug.Log($"New Player {senderEndPoint} authenticated with session {sessionToken}");
         }
 
@@ -261,7 +268,12 @@ namespace lv.network
             }
         }
         
-        private void ChatMessage(PacketData packetData)
+        private void ChatJoin(PacketData packetData)
+        {
+            OnReceiveChatMessage.Invoke(packetData.m_packet.ReadString() + " joined");
+        }
+
+        private void ChatMessage(PacketData packetData) 
         {
             if (m_isHost)
                 BroadcastPacket(packetData);
@@ -276,8 +288,9 @@ namespace lv.network
             for (byte i = 0; i < length; i++)
             {
                 IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
+                string username = packetData.m_packet.ReadString();
                 string sessionToken = packetData.m_packet.ReadString();
-                Player player = new Player(sessionToken);
+                Player player = new Player(username, sessionToken);
                 m_players[ipEndPoint] = player;
             }
 
@@ -358,7 +371,7 @@ namespace lv.network
         /// Starts hosting a game, initializes the server, and sets up the host's networking configuration.
         /// </summary>
         /// <param name="lobbyName">The name of the lobby to be hosted.</param>
-        public void StartHost(string lobbyName)
+        public void StartHost(string lobbyName, string userName)
         {
             Debug.Log("Hosting game...");
             m_isHost = true;
@@ -370,7 +383,7 @@ namespace lv.network
             m_udpClient = new UdpClient(m_serverPort);
             m_udpClient.BeginReceive(OnReceiveData, null);
 
-            Player newPlayer = new Player($"{System.Guid.NewGuid()}");
+            Player newPlayer = new Player(userName, $"{System.Guid.NewGuid()}");
             m_players[m_hostEndPoint] = newPlayer;
 
             Debug.Log("Server up and running. Waiting for new Players...");

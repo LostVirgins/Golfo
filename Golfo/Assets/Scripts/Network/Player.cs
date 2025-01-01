@@ -7,6 +7,7 @@ namespace lv.network
     {
         public GameObject m_golfBall;
         public string m_sessionToken { get; private set; }
+        public string m_username { get; private set; }
 
         public Vector3 m_netInitPos;
         public Vector3 m_netEndPos;
@@ -16,8 +17,9 @@ namespace lv.network
         public bool m_inHole = false;
         public List<int> m_score = new List<int>();
 
-        public Player(string sessionToken)
+        public Player(string username, string sessionToken)
         {
+            m_username = username;
             m_sessionToken = sessionToken;
         }
 

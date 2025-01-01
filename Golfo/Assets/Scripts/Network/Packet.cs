@@ -25,6 +25,7 @@ namespace lv.network
 
         obstacle1_data,
 
+        chat_join,
         chat_message,
 
         ball_strike,
@@ -112,12 +113,14 @@ namespace lv.network
         public Packet m_packet { get; private set; }
         public IPEndPoint m_remoteEP { get; private set; }
         public bool m_isBroadCast { get; private set; }
+        public bool m_omitSender { get; private set; }
 
-        public PacketData(Packet packet, IPEndPoint remoteEP, bool isBroadCast = false)
+        public PacketData(Packet packet, IPEndPoint remoteEP, bool isBroadCast = false, bool omitSender = true)
         {
             m_packet = packet;
             m_remoteEP = remoteEP;
-            m_isBroadCast= isBroadCast;
+            m_isBroadCast = isBroadCast;
+            m_omitSender = omitSender;
         }
     }
 }

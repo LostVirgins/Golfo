@@ -62,7 +62,7 @@ public class MainMenu : MonoBehaviour
         lobbyName = inputLobyName.text;
         LobyNameText.text = "Lobby: " + lobbyName;
 
-        NetworkManagerObj.GetComponent<NetworkManager>().StartHost(lobbyName);
+        NetworkManagerObj.GetComponent<NetworkManager>().StartHost(lobbyName, userName);
 
         MainMenuSec.SetActive(false);
         LobyViewSec.SetActive(true);
@@ -98,6 +98,7 @@ public class MainMenu : MonoBehaviour
         foreach (var player in connectedPlayers)
         {
             gameStart.WriteString(player.Key.ToString());
+            gameStart.WriteString(player.Value.m_username);
             gameStart.WriteString(player.Value.m_sessionToken);
         }
 
