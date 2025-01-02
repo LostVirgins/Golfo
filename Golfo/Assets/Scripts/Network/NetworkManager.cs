@@ -81,73 +81,43 @@ namespace lv.network
             if (m_lastTickTime >= m_tickRate)
             {
                 m_lastTickTime = 0;
-
-                PlayerPosition();
-                PlayerScore();
+                GameManager.Instance.SendGameData();
             }
         }
 
-        private void PlayerPosition()
+
+        // Send Operations -------------------------------------------------------------------
+        private void SendPacket(PacketData packetData)
         {
-            if (m_isHost)
-            {
-                m_players[m_hostEndPoint].m_netEndPos = GameManager.Instance.m_player.transform.position;
-                m_players[m_hostEndPoint].m_netEndVel = GameManager.Instance.m_player.GetComponent<Rigidbody>().velocity;
-
-                Packet playersPos = new Packet();
-                playersPos.WriteByte((byte)PacketType.player_position);
-                playersPos.WriteString("hekbas_todo_use_token_:)");
-                playersPos.WriteInt(m_players.Count);
-
-                foreach (var player in m_players)
-                {
-                    playersPos.WriteString(player.Key.ToString());
-                    playersPos.WriteVector3(player.Value.m_netEndPos);
-                    playersPos.WriteVector3(player.Value.m_netEndVel);
-                }
-
-                EnqueueSend(new PacketData(playersPos, m_hostEndPoint, true));
-
-                playersPos.SetStreamPos(0);
-                playersPos.ReadByte();
-                playersPos.ReadString();
-                GameManager.Instance.OnNetworkPlayerPosition(new PacketData(playersPos, m_hostEndPoint, true));
-            }
-            else
-            {
-                Packet playerPos = new Packet();
-                playerPos.WriteByte((byte)PacketType.player_position);
-                playerPos.WriteString("hekbas_todo_use_token_:)");
-                playerPos.WriteString(m_localEndPoint.ToString());
-                playerPos.WriteVector3(GameManager.Instance.m_player.transform.position);
-                playerPos.WriteVector3(GameManager.Instance.m_player.GetComponent<Rigidbody>().velocity);
-                EnqueueSend(new PacketData(playerPos, m_hostEndPoint));
-            }
+            byte[] data = packetData.m_packet.GetData();
+            m_udpClient.Send(data, data.Length, packetData.m_remoteEP);
         }
 
-        private void PlayerScore()
+        private void SendPacket(Packet packet, IPEndPoint endPoint = null)
         {
-            if (m_isHost)
+            endPoint = endPoint ?? m_hostEndPoint;
+            byte[] data = packet.GetData();
+            m_udpClient.Send(data, data.Length, endPoint);
+        }
+
+        private void BroadcastPacket(PacketData packetData)
+        {
+            foreach (var client in m_players.Keys)
             {
-                Packet playersScore = new Packet();
-                playersScore.WriteByte((byte)PacketType.player_score);
-                playersScore.WriteString("hekbas_todo_use_token_:)");
-                playersScore.WriteInt(m_players.Count);
-
-                foreach (var player in m_players)
-                {
-                    playersScore.WriteString(player.Key.ToString());
-                    playersScore.WriteInt(player.Value.m_score.Count);
-
-                    foreach (var score in player.Value.m_score)
-                        playersScore.WriteInt(score);
-                }
-                EnqueueSend(new PacketData(playersScore, m_hostEndPoint, true));
+                if (packetData.m_omitSender && client.Equals(m_hostEndPoint)) continue;
+                SendPacket(packetData.m_packet, client);
             }
         }
 
+        private void BroadcastPacket(Packet packet)
+        {
+            //hekbas: this will also resend to origin!
+            foreach (var client in m_players.Keys)
+                SendPacket(packet, client);
+        }
 
-        // Receive operations -------------------------------------------------------
+
+        // Receive Operations -----------------------------------------------------------------
         private void OnReceiveData(IAsyncResult result)
         {
             IPEndPoint senderEP = new IPEndPoint(0, 0);
@@ -213,44 +183,14 @@ namespace lv.network
                 case PacketType.player_score:       PlayerScore(packetData);        break;
                 case PacketType.player_in_hole:     PlayerInHole(packetData);       break;
                 case PacketType.next_hole:          NextHole(packetData);           break;
-                case PacketType.obstacle1_data:     Obstacle1Data(packetData);      break;
+                case PacketType.obstacle_data_A:    ObstacleData_A(packetData);     break;
+                case PacketType.obstacle_data_B:    ObstacleData_B(packetData);     break;
                 default: Debug.Log("Packet Type not found.");                       break;
             }
         }
 
 
-        // Send Operations ----------------------------------------------------------
-        private void SendPacket(PacketData packetData)
-        {
-            byte[] data = packetData.m_packet.GetData();
-            m_udpClient.Send(data, data.Length, packetData.m_remoteEP);
-        }
-
-        private void SendPacket(Packet packet, IPEndPoint endPoint = null)
-        {
-            endPoint = endPoint ?? m_hostEndPoint;
-            byte[] data = packet.GetData();
-            m_udpClient.Send(data, data.Length, endPoint);
-        }
-
-        private void BroadcastPacket(PacketData packetData)
-        {
-            foreach (var client in m_players.Keys)
-            {
-                if (packetData.m_omitSender && client.Equals(m_hostEndPoint)) continue;
-                SendPacket(packetData.m_packet, client);
-            }
-        }
-
-        private void BroadcastPacket(Packet packet)
-        {
-            //hekbas: this will also resend to origin!
-            foreach (var client in m_players.Keys)
-                SendPacket(packet, client);
-        }
-
-
-        // Received Packet Processing ----------------------------------------------------------
+        // Received Packet Processing ---------------------------------------------------------
         private void ConnectionRequest(Packet packet, IPEndPoint senderEndPoint)
         {
             string username = packet.ReadString();
@@ -408,14 +348,20 @@ namespace lv.network
                 GameManager.Instance.OnNextHole(packetData);
         }
 
-        private void Obstacle1Data(PacketData packetData)
+        private void ObstacleData_A(PacketData packetData)
         {
             if (!m_isHost)
-                GameManager.Instance.OnNetworkObstacleData(packetData);
+                GameManager.Instance.OnNetworkObstacleData_A(packetData);
+        }
+
+        private void ObstacleData_B(PacketData packetData)
+        {
+            if (!m_isHost)
+                GameManager.Instance.OnNetworkObstacleData_B(packetData);
         }
 
 
-        // Public Methods ---------------------------------------------------------------
+        // Public Methods --------------------------------------------------------------------
 
         /// <summary>
         /// Starts hosting a game, initializes the server, and sets up the host's networking configuration.

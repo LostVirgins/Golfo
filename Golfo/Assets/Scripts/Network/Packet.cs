@@ -24,8 +24,8 @@ namespace lv.network
         player_in_hole,
         next_hole,
 
-        obstacle1_data,
-        obstacle2_data,
+        obstacle_data_A,
+        obstacle_data_B,
 
         chat_join,
         chat_message,
