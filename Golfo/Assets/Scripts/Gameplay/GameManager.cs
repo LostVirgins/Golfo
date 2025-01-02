@@ -43,7 +43,7 @@ namespace lv.gameplay
         private float m_curentLerpTime = 0f;
         private bool lerpingPos = false;
 
-        public int currentHole = 0;
+        public int m_currentHole = 0;
         private Vector3 newPosition;
 
         private void Awake()
@@ -78,8 +78,8 @@ namespace lv.gameplay
 
             if (m_gameState == GameState.changing_hole)
             {
-                m_mapData.GetComponent<MapData>().m_Holes[currentHole - 1].bound.SetActive(false);
-                m_mapData.GetComponent<MapData>().m_Holes[currentHole].bound.SetActive(true);
+                m_mapData.GetComponent<MapData>().m_Holes[m_currentHole - 1].bound.SetActive(false);
+                m_mapData.GetComponent<MapData>().m_Holes[m_currentHole].bound.SetActive(true);
 
                 m_rb.velocity = Vector3.zero;
                 m_rb.angularVelocity = Vector3.zero;
@@ -282,7 +282,7 @@ namespace lv.gameplay
             holeData.WriteString(netManager.m_localEndPoint.ToString());
             netManager.EnqueueSend(new PacketData(holeData, netManager.m_hostEndPoint));
 
-            UI_InGame.Instance.DebugScreenLog("Me cai :( - " + currentHole);
+            UI_InGame.Instance.DebugScreenLog("Me cai :( - " + m_currentHole);
         }
 
 
@@ -355,7 +355,7 @@ namespace lv.gameplay
 
         public void OnAllPlayersInHole(PacketData packetData)
         {
-            if (currentHole == 5)
+            if (m_currentHole == 5)
             {
                 Packet gameEnd = new Packet();
                 gameEnd.WriteByte((byte)PacketType.game_end);
@@ -364,12 +364,12 @@ namespace lv.gameplay
             }
             else
             {
-                currentHole++;
+                m_currentHole++;
 
                 Packet obsData = new Packet();
                 obsData.WriteByte((byte)PacketType.next_hole);
                 obsData.WriteString("hekbas_todo_use_token_:)");
-                obsData.WriteInt(currentHole);
+                obsData.WriteInt(m_currentHole);
                 NetworkManager.Instance.EnqueueSend(new PacketData(obsData, NetworkManager.Instance.m_hostEndPoint, true));
 
                 obsData.SetStreamPos(0);
@@ -382,8 +382,8 @@ namespace lv.gameplay
         public void OnNextHole(PacketData packetData)
         {
             GameManager.Instance.m_gameState = GameState.changing_hole;
-            currentHole = packetData.m_packet.ReadInt();
-            newPosition = m_mapData.GetComponent<MapData>().m_Holes[currentHole].spawnPoint.transform.position;
+            m_currentHole = packetData.m_packet.ReadInt();
+            newPosition = m_mapData.GetComponent<MapData>().m_Holes[m_currentHole].spawnPoint.transform.position;
         }
 
         public void OnGameEnd()
@@ -391,6 +391,22 @@ namespace lv.gameplay
             GameManager.Instance.m_gameState = GameState.game_end;
             UI_InGame.Instance.ToggleScoreWindow();
             UI_InGame.Instance.ToggleExit();
+        }
+
+
+        // Public methods ----------------------------------------------------------------
+        public int GetHolePar(int hole)
+        {
+            return m_mapData.GetComponent<MapData>().m_Holes[hole].par;
+        }
+
+        public int CurrentParSum()
+        {
+            int currentPar = 0;
+            for (int i = 0; i <= m_currentHole; i++)
+                currentPar += m_mapData.GetComponent<MapData>().m_Holes[i].par;
+
+            return currentPar;
         }
     }
 }

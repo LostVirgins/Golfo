@@ -281,7 +281,7 @@ namespace lv.network
             if (m_isHost)
             {
                 IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
-                m_players[ipEndPoint].m_score[GameManager.Instance.currentHole] += 1;
+                m_players[ipEndPoint].m_score[GameManager.Instance.m_currentHole] += 1;
             }
         }
 

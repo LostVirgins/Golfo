@@ -2,9 +2,11 @@ using lv.gameplay;
 using lv.network;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Schema;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms.Impl;
 
 namespace lv.ui
 {
@@ -75,12 +77,30 @@ namespace lv.ui
             List<GameObject> children = GameManager.Instance.GetAllChildren(messageObject);
 
             children[0].GetComponent<TextMeshProUGUI>().text = player.m_username;
-            children[7].GetComponent<TextMeshProUGUI>().text = player.GetTotalScore().ToString();
 
-            for (int i = 1; i < GameManager.Instance.currentHole + 2; i++)
-                children[i].GetComponent<TextMeshProUGUI>().text = player.m_score[i - 1].ToString();
+            for (int i = 1; i < GameManager.Instance.m_currentHole + 2; i++)
+            {
+                int score = player.m_score[i - 1];
+                children[i].GetComponent<TextMeshProUGUI>().text = score.ToString();
+                children[i].GetComponent<TextMeshProUGUI>().color = SetScoreColor(score, GameManager.Instance.GetHolePar(i-1));
+            }
+
+            int totalScore = player.GetTotalScore() - GameManager.Instance.CurrentParSum();
+            children[7].GetComponent<TextMeshProUGUI>().text = totalScore.ToString();
+            children[7].GetComponent<TextMeshProUGUI>().color = SetScoreColor(player.GetTotalScore(), GameManager.Instance.CurrentParSum());
 
             Canvas.ForceUpdateCanvases();
+        }
+
+        Color SetScoreColor(int score, int par)
+        {
+            int result = score - par;
+            switch (result)
+            {
+                case 0:     return Color.black;
+                case > 0:   return Color.red;
+                case < 0:   return Color.green;
+            }
         }
 
         #endregion
