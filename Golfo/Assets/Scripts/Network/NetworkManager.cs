@@ -328,7 +328,7 @@ namespace lv.network
 
         private void GameEnd()
         {
-
+            GameManager.Instance.OnGameEnd();
         }
 
         private void BallStrike(PacketData packetData)
@@ -490,6 +490,33 @@ namespace lv.network
             m_sendQueue.Enqueue(new PacketData(authReq, m_hostEndPoint));
 
             Debug.Log("Authentication request sent to server.");
+        }
+
+        /// <summary>
+        /// Leaves the current server, loads Main Menu.
+        /// </summary>
+        public void ExitServer()
+        {
+            if (m_udpClient != null)
+            {
+                m_udpClient.Close();
+                m_udpClient = null;
+            }
+
+            m_players.Clear();
+
+            m_isHost = false;
+            m_lobbyName = string.Empty;
+            m_hostEndPoint = null;
+            m_localEndPoint = null;
+        }
+
+        /// <summary>
+        /// Moves the current game object to the active scene so it gets destroyed during scene loading.
+        /// </summary>
+        public void RemoveOnLoad()
+        {
+            SceneManager.MoveGameObjectToScene(this.GameObject(), SceneManager.GetActiveScene());
         }
 
         /// <summary>

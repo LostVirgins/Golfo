@@ -4,15 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace lv.ui
 {
     public class UI_InGame : MonoBehaviour
     {
         public static UI_InGame Instance { get; private set; }
-
-        NetworkManager networkManager = NetworkManager.Instance;
-        GameManager gameManager = GameManager.Instance;
 
         public GameObject m_scoreSec;
         public GameObject m_scoreNodePrefab;
@@ -22,6 +20,8 @@ namespace lv.ui
         public GameObject m_debugMessagePrefab;
         public GameObject m_debugViewContent;
 
+        public GameObject m_exitButton;
+
         void Awake()
         {
             Instance = this;
@@ -30,40 +30,43 @@ namespace lv.ui
         void Update()
         {
             if(Input.GetKeyDown(KeyCode.Tab))
-                TogleDebugWindow();
+                ToggleDebugWindow();
         }
 
         #region ScoreWindow
 
-        public void TogleScoreWindow()
+        public void ToggleScoreWindow()
         {
-            m_scoreSec.SetActive(!m_scoreSec.activeSelf);
+            if (GameManager.Instance.m_gameState == GameState.playing)
+            {
+                m_scoreSec.SetActive(!m_scoreSec.activeSelf);
 
-            if (m_scoreSec.activeSelf)
-                OpenScoreWindow();
-            else
+                if (m_scoreSec.activeSelf)
+                    OpenScoreWindow();
+                else
+                    CloseScoreWindow();
+            }
+
+            if (GameManager.Instance.m_gameState == GameState.game_end)
+            {
+                m_scoreSec.SetActive(true);
                 CloseScoreWindow();
+                OpenScoreWindow();
+            }
         }
 
         void OpenScoreWindow()
         {
-            List<Player> playersByTotalScore = networkManager.m_players.Values.OrderBy(player => player.GetTotalScore()).ToList();
-            DebugScreenLog(playersByTotalScore.Count.ToString());
+            List<Player> playersByTotalScore = NetworkManager.Instance.m_players.Values.OrderBy(player => player.GetTotalScore()).ToList();
             foreach (var player in playersByTotalScore)
-            {
-                DebugScreenLog("+");
                 AddScoreNode(player);
-            }
         }
 
         void CloseScoreWindow()
         {
             List<GameObject> children = GameManager.Instance.GetAllChildren(m_scoreViewContent);
             foreach (var child in children)
-            {
                 Destroy(child);
-                DebugScreenLog("-");
-            }
         }
 
         void AddScoreNode(Player player)
@@ -84,7 +87,7 @@ namespace lv.ui
 
         #region DebugWindow
 
-        void TogleDebugWindow()
+        void ToggleDebugWindow()
         {
             m_debugSec.SetActive(!m_debugSec.activeSelf);
         }
@@ -105,5 +108,20 @@ namespace lv.ui
 
     #endregion
 
+        public void ToggleExit()
+        {
+            m_exitButton.SetActive(!m_exitButton.activeSelf);
+        }
+
+        public void OnExit()
+        {
+            if (NetworkManager.Instance.m_isHost)
+                NetworkManager.Instance.ShutdownHost();
+            else
+                NetworkManager.Instance.ExitServer();
+
+            NetworkManager.Instance.RemoveOnLoad();
+            SceneManager.LoadScene(sceneName: "1_main_menu");
+        }
     }
 }

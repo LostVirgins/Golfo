@@ -14,7 +14,7 @@ namespace lv.gameplay
         playing,
         out_of_bounds,
         changing_hole,
-        game_finished
+        game_end
     }
 
     public class GameManager : MonoBehaviour
@@ -263,7 +263,10 @@ namespace lv.gameplay
         {
             if (currentHole == 5)
             {
-                // Game Finished
+                Packet gameEnd = new Packet();
+                gameEnd.WriteByte((byte)PacketType.game_end);
+                gameEnd.WriteString("hekbas_todo_use_token_:)");
+                NetworkManager.Instance.EnqueueSend(new PacketData(gameEnd, NetworkManager.Instance.m_hostEndPoint, true, false));
             }
             else
             {
@@ -287,6 +290,13 @@ namespace lv.gameplay
             GameManager.Instance.m_gameState = GameState.changing_hole;
             currentHole = packetData.m_packet.ReadInt();
             newPosition = m_mapData.GetComponent<MapData>().m_Holes[currentHole].spawnPoint.transform.position;
+        }
+
+        public void OnGameEnd()
+        {
+            GameManager.Instance.m_gameState = GameState.game_end;
+            UI_InGame.Instance.ToggleScoreWindow();
+            UI_InGame.Instance.ToggleExit();
         }
     }
 }
