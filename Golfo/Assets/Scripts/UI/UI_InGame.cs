@@ -1,8 +1,8 @@
 using lv.gameplay;
 using lv.network;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
-using UnityEditor.VersionControl;
 using UnityEngine;
 
 namespace lv.ui
@@ -37,58 +37,45 @@ namespace lv.ui
 
         public void TogleScoreWindow()
         {
-            m_scoreSec.SetActive(!m_debugSec.activeSelf);
+            m_scoreSec.SetActive(!m_scoreSec.activeSelf);
 
-            if(m_scoreSec.activeSelf)
+            if (m_scoreSec.activeSelf)
                 OpenScoreWindow();
             else
                 CloseScoreWindow();
         }
 
-        void CloseScoreWindow()
-        {
-            // borrar todos los children de m_scoreViewContent
-        }
-
         void OpenScoreWindow()
         {
-            // Esto esta mal, faltan pasos
-                    //Primero ordenar la lista de players por score, luego añadir los node por cada player
-            foreach (var player in networkManager.m_players)
+            List<Player> playersByTotalScore = networkManager.m_players.Values.OrderBy(player => player.GetTotalScore()).ToList();
+            DebugScreenLog(playersByTotalScore.Count.ToString());
+            foreach (var player in playersByTotalScore)
             {
+                DebugScreenLog("+");
                 AddScoreNode(player);
             }
         }
 
+        void CloseScoreWindow()
+        {
+            List<GameObject> children = GameManager.Instance.GetAllChildren(m_scoreViewContent);
+            foreach (var child in children)
+            {
+                Destroy(child);
+                DebugScreenLog("-");
+            }
+        }
 
         void AddScoreNode(Player player)
         {
-            GameObject messageObject = Instantiate(m_debugMessagePrefab, m_debugViewContent.transform);
+            GameObject messageObject = Instantiate(m_scoreNodePrefab, m_scoreViewContent.transform);
+            List<GameObject> children = GameManager.Instance.GetAllChildren(messageObject);
 
-            List<GameObject> children = gameManager.GetAllChildren(messageObject);
+            children[0].GetComponent<TextMeshProUGUI>().text = player.m_username;
+            children[7].GetComponent<TextMeshProUGUI>().text = player.GetTotalScore().ToString();
 
-            int i = 0;
-            foreach (GameObject child in children)
-            {
-                TextMeshProUGUI messageTextComponent = child.GetComponent<TextMeshProUGUI>();
-                if (messageTextComponent != null)
-                {
-                    if (i == 0)
-                    {
-                        messageTextComponent.text = player.name;
-                    }
-                    else if(i == 7)
-                    {
-                        // Total Score
-                    }
-                    else
-                    {
-                        messageTextComponent.text = player.m_score[i--];
-                    }
-                }
-
-                ++i;
-            }
+            for (int i = 1; i < GameManager.Instance.currentHole + 2; i++)
+                children[i].GetComponent<TextMeshProUGUI>().text = player.m_score[i - 1].ToString();
 
             Canvas.ForceUpdateCanvases();
         }

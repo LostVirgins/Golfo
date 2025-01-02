@@ -92,8 +92,6 @@ namespace lv.gameplay
             lineRenderer.enabled = false;
             lineRendererArrow.enabled = false;
 
-            UI_InGame.Instance.DebugScreenLog("IS AIMING FALSE -------");
-
             //check if shot possible
             if (minShotDistance > distanceFromBall) return;
 
@@ -111,9 +109,9 @@ namespace lv.gameplay
             packet.WriteByte((byte)PacketType.ball_strike);
             packet.WriteString("hekbas_todo_use_token_:)");
             packet.WriteString(NetworkManager.Instance.m_localEndPoint.ToString());
-            packet.WriteVector3(direction);
-            packet.WriteFloat(strength);
-            packet.WriteFloat(shotPower);
+            //packet.WriteVector3(direction);
+            //packet.WriteFloat(strength);
+            //packet.WriteFloat(shotPower);
 
             NetworkManager.Instance.EnqueueSend(new PacketData(packet, NetworkManager.Instance.m_hostEndPoint));
         }

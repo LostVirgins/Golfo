@@ -7,9 +7,7 @@ namespace lv.gameplay
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Hole"))
-            {
                 GameManager.Instance.PlayerInHole();
-            }
         }
     }
 }

@@ -20,10 +20,12 @@ namespace lv.network
         game_end,
 
         player_position,
+        player_score,
         player_in_hole,
         next_hole,
 
         obstacle1_data,
+        obstacle2_data,
 
         chat_join,
         chat_message,

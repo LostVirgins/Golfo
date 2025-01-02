@@ -104,12 +104,12 @@ public class MainMenu : MonoBehaviour
 
         NetworkManager.Instance.EnqueueSend(new PacketData(gameStart, NetworkManager.Instance.m_hostEndPoint, true));
 
-        SceneManager.LoadScene(sceneName: "2_game_test");
+        SceneManager.LoadScene(sceneName: "2_map_A");
     }
 
-    public void ExitLoby()
+    public void ExitLobby()
     {
-        //hekbas: shutdown server
+        NetworkManager.Instance.ShutdownHost();
 
         MainMenuSec.SetActive(true);
         LobyViewSec.SetActive(false);

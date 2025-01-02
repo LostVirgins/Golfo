@@ -41,7 +41,7 @@ namespace lv.gameplay
         private float m_curentLerpTime = 0f;
         private bool lerpingPos = false;
 
-        private int currentHole = 0;
+        public int currentHole = 0;
         private Vector3 newPosition;
 
         private void Awake()

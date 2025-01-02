@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace lv.network
 {
-    public class Player : MonoBehaviour
+    public class Player
     {
         public GameObject m_golfBall;
         public string m_sessionToken { get; private set; }
@@ -15,7 +16,7 @@ namespace lv.network
         public Vector3 m_netEndVel;
 
         public bool m_inHole = false;
-        public List<int> m_score = new List<int>();
+        public List<int> m_score = new List<int> { 0, 0, 0, 0, 0, 0 };
 
         public Player(string username, string sessionToken)
         {
@@ -26,6 +27,11 @@ namespace lv.network
         public void UpdatePosition(Vector3 newPosition)
         {
             m_golfBall.transform.position = newPosition;
+        }
+
+        public int GetTotalScore()
+        {
+            return m_score.Sum();
         }
     }
 }

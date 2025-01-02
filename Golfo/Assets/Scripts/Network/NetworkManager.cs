@@ -7,6 +7,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms.Impl;
 
 namespace lv.network
 {
@@ -70,7 +71,7 @@ namespace lv.network
 
         private void OnApplicationQuit()
         {
-            m_udpClient.Close();
+            ShutdownHost();
         }
 
         private void ServerTick()
@@ -81,40 +82,67 @@ namespace lv.network
             {
                 m_lastTickTime = 0;
 
-                if (m_isHost)
+                PlayerPosition();
+                PlayerScore();
+            }
+        }
+
+        private void PlayerPosition()
+        {
+            if (m_isHost)
+            {
+                m_players[m_hostEndPoint].m_netEndPos = GameManager.Instance.m_player.transform.position;
+                m_players[m_hostEndPoint].m_netEndVel = GameManager.Instance.m_player.GetComponent<Rigidbody>().velocity;
+
+                Packet playersPos = new Packet();
+                playersPos.WriteByte((byte)PacketType.player_position);
+                playersPos.WriteString("hekbas_todo_use_token_:)");
+                playersPos.WriteInt(m_players.Count);
+
+                foreach (var player in m_players)
                 {
-                    m_players[m_hostEndPoint].m_netEndPos = GameManager.Instance.m_player.transform.position;
-                    m_players[m_hostEndPoint].m_netEndVel = GameManager.Instance.m_player.GetComponent<Rigidbody>().velocity;
-
-                    Packet playersPos = new Packet();
-                    playersPos.WriteByte((byte)PacketType.player_position);
-                    playersPos.WriteString("hekbas_todo_use_token_:)");
-                    playersPos.WriteInt(m_players.Count);
-
-                    foreach (var player in m_players)
-                    {
-                        playersPos.WriteString(player.Key.ToString());
-                        playersPos.WriteVector3(player.Value.m_netEndPos);
-                        playersPos.WriteVector3(player.Value.m_netEndVel);
-                    }
-
-                    EnqueueSend(new PacketData(playersPos, m_hostEndPoint, true));
-
-                    playersPos.SetStreamPos(0);
-                    playersPos.ReadByte();
-                    playersPos.ReadString();
-                    GameManager.Instance.OnNetworkPlayerPosition(new PacketData(playersPos, m_hostEndPoint, true));
+                    playersPos.WriteString(player.Key.ToString());
+                    playersPos.WriteVector3(player.Value.m_netEndPos);
+                    playersPos.WriteVector3(player.Value.m_netEndVel);
                 }
-                else
+
+                EnqueueSend(new PacketData(playersPos, m_hostEndPoint, true));
+
+                playersPos.SetStreamPos(0);
+                playersPos.ReadByte();
+                playersPos.ReadString();
+                GameManager.Instance.OnNetworkPlayerPosition(new PacketData(playersPos, m_hostEndPoint, true));
+            }
+            else
+            {
+                Packet playerPos = new Packet();
+                playerPos.WriteByte((byte)PacketType.player_position);
+                playerPos.WriteString("hekbas_todo_use_token_:)");
+                playerPos.WriteString(m_localEndPoint.ToString());
+                playerPos.WriteVector3(GameManager.Instance.m_player.transform.position);
+                playerPos.WriteVector3(GameManager.Instance.m_player.GetComponent<Rigidbody>().velocity);
+                EnqueueSend(new PacketData(playerPos, m_hostEndPoint));
+            }
+        }
+
+        private void PlayerScore()
+        {
+            if (m_isHost)
+            {
+                Packet playersScore = new Packet();
+                playersScore.WriteByte((byte)PacketType.player_score);
+                playersScore.WriteString("hekbas_todo_use_token_:)");
+                playersScore.WriteInt(m_players.Count);
+
+                foreach (var player in m_players)
                 {
-                    Packet playerPos = new Packet();
-                    playerPos.WriteByte((byte)PacketType.player_position);
-                    playerPos.WriteString("hekbas_todo_use_token_:)");
-                    playerPos.WriteString(m_localEndPoint.ToString());
-                    playerPos.WriteVector3(GameManager.Instance.m_player.transform.position);
-                    playerPos.WriteVector3(GameManager.Instance.m_player.GetComponent<Rigidbody>().velocity);
-                    EnqueueSend(new PacketData(playerPos, m_hostEndPoint));
+                    playersScore.WriteString(player.Key.ToString());
+                    playersScore.WriteInt(player.Value.m_score.Count);
+
+                    foreach (var score in player.Value.m_score)
+                        playersScore.WriteInt(score);
                 }
+                EnqueueSend(new PacketData(playersScore, m_hostEndPoint, true));
             }
         }
 
@@ -182,6 +210,7 @@ namespace lv.network
                 case PacketType.game_end:           GameEnd();                      break;
                 case PacketType.ball_strike:        BallStrike(packetData);         break;
                 case PacketType.player_position:    PlayerPosition(packetData);     break;
+                case PacketType.player_score:       PlayerScore(packetData);        break;
                 case PacketType.player_in_hole:     PlayerInHole(packetData);       break;
                 case PacketType.next_hole:          NextHole(packetData);           break;
                 case PacketType.obstacle1_data:     Obstacle1Data(packetData);      break;
@@ -294,7 +323,7 @@ namespace lv.network
                 m_players[ipEndPoint] = player;
             }
 
-            SceneManager.LoadScene(sceneName: "2_game_test");
+            SceneManager.LoadScene(sceneName: "2_map_A");
         }
 
         private void GameEnd()
@@ -304,10 +333,16 @@ namespace lv.network
 
         private void BallStrike(PacketData packetData)
         {
-            //Input preditcion turned off
-
-            //if (isHost) BroadcastPacket(packetData);
+            // Input preditcion OFF
+            //if (m_isHost) BroadcastPacket(packetData);
             //GameManager.Instance.OnBallStrike(packetData);
+
+            // Score
+            if (m_isHost)
+            {
+                IPEndPoint ipEndPoint = ParseIPEndPoint(packetData.m_packet.ReadString());
+                m_players[ipEndPoint].m_score[GameManager.Instance.currentHole] += 1;
+            }
         }
 
         private void PlayerPosition(PacketData packetData)
@@ -323,6 +358,21 @@ namespace lv.network
             else
             {
                 GameManager.Instance.OnNetworkPlayerPosition(packetData);
+            }
+        }
+
+        private void PlayerScore(PacketData packetData)
+        {
+            Packet packet = packetData.m_packet;
+            int playerCount = packet.ReadInt();
+
+            for (int i = 0; i < playerCount; i++)
+            {
+                IPEndPoint ipEndPoint = ParseIPEndPoint(packet.ReadString());
+                int scoreCount = packet.ReadInt();
+
+                for (int j = 0; j < scoreCount; j++)
+                    m_players[ipEndPoint].m_score[j] = packet.ReadInt();
             }
         }
 
@@ -387,6 +437,36 @@ namespace lv.network
             m_players[m_hostEndPoint] = newPlayer;
 
             Debug.Log("Server up and running. Waiting for new Players...");
+        }
+
+        /// <summary>
+        /// Shuts down the hosted server, releases networking resources, and resets the server state.
+        /// </summary>
+        public void ShutdownHost()
+        {
+            Debug.Log("Shutting down server...");
+
+            if (m_isHost)
+            {
+                if (m_udpClient != null)
+                {
+                    m_udpClient.Close();
+                    m_udpClient = null;
+                }
+
+                m_players.Clear();
+
+                m_isHost = false;
+                m_lobbyName = string.Empty;
+                m_hostEndPoint = null;
+                m_localEndPoint = null;
+
+                Debug.Log("Server has been shut down successfully.");
+            }
+            else
+            {
+                Debug.LogWarning("ShutdownHost called, but the server is not currently hosting.");
+            }
         }
 
         /// <summary>
