@@ -285,10 +285,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5f1ab71af0eea04c998b6c8b2a279c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shotPower: 300
+  shotPower: 350
   stopVelocity: 1.5
-  minShotDistance: 1
-  maxShotDistance: 6
+  minShotDistance: 0.6
+  maxForce: 6
+  frequency: 1
   lineRenderer: {fileID: 3503648735868082338}
   lineRendererArrow: {fileID: 6320181427166264080}
 --- !u!114 &3145866685752636075
